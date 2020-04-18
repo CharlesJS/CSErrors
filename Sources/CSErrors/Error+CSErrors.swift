@@ -62,6 +62,13 @@ extension Error {
         )
     }
 
+    /// Convert an error to an `OSStatus`, if it is backed by one.
+    public func toOSStatus() -> OSStatus? {
+        let nsError = self as NSError
+
+        return (nsError.domain == NSOSStatusErrorDomain) ? OSStatus(nsError.code) : nil
+    }
+
     /// Returns the underlying error, if there is one.
     public var underlyingError: Error? {
         if let recoverableErrorWrapper = self as? RecoverableErrorWrapper {
