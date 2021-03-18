@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if canImport(System)
+import System
+#endif
+
 /**
  Create an `Error` corresponding to a POSIX error code. If `url` is provided, this method will wrap the resulting
  error in a `CocoaError`, if applicable.
@@ -21,6 +25,18 @@ import Foundation
 public func errno(_ code: Int32 = Foundation.errno, url: URL? = nil, isWrite: Bool = false) -> Error {
     if code == 0 {
         return CocoaError(.fileReadUnknown)
+    } else if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *) {
+        let err = System.Errno(rawValue: code)
+
+        if err.isCancelledError {
+            return CocoaError(.userCancelled, underlying: err)
+        }
+
+        if let url = url, let cocoaCode = cocoaCode(errno: err, url: url, isWrite: isWrite) {
+            return CocoaError(cocoaCode, url: url, underlying: err)
+        }
+
+        return err
     } else if let posixCode = POSIXErrorCode(rawValue: code) {
         let err = POSIXError(posixCode)
 
@@ -35,6 +51,30 @@ public func errno(_ code: Int32 = Foundation.errno, url: URL? = nil, isWrite: Bo
         return err
     } else {
         return NSError(domain: NSPOSIXErrorDomain, code: Int(code), userInfo: nil)
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
+private func cocoaCode(errno: System.Errno, url: URL, isWrite: Bool) -> CocoaError.Code? {
+    switch errno {
+    case .permissionDenied, .notPermitted:
+        return isWrite ? .fileWriteNoPermission : .fileReadNoPermission
+    case .noSuchFileOrDirectory:
+        return isWrite ? .fileNoSuchFile : .fileReadNoSuchFile
+    case .fileExists:
+        return .fileWriteFileExists
+    case .fileTooLarge:
+        return .fileReadTooLarge
+    case .noSpace:
+        return .fileWriteOutOfSpace
+    case .readOnlyFileSystem:
+        return .fileWriteVolumeReadOnly
+    case .badFileTypeOrFormat:
+        return .fileReadCorruptFile
+    case .canceled:
+        return .userCancelled
+    default:
+        return nil
     }
 }
 

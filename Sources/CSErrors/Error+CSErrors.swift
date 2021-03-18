@@ -7,6 +7,10 @@
 
 import Foundation
 
+#if canImport(System)
+import System
+#endif
+
 extension Error {
     /**
      A helper for adding recoverability to an existing error. When passed to error presentation  methods such as macOS's
@@ -80,6 +84,11 @@ extension Error {
 
     /// True if the error represents a “File Not Found” error, regardless of domain.
     public var isFileNotFoundError: Bool {
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
+           let errno = self as? System.Errno, errno == .noSuchFileOrDirectory {
+            return true
+        }
+
         if let posixErr = self as? POSIXError, posixErr == POSIXError(.ENOENT) {
             return true
         }
@@ -106,6 +115,11 @@ extension Error {
 
     /// True if the error represents a permission or access error, regardless of domain.
     public var isPermissionError: Bool {
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
+           let errno = self as? System.Errno, [.permissionDenied, .notPermitted].contains(errno) {
+            return true
+        }
+
         if let posixErr = self as? POSIXError, [.EACCES, .EPERM].contains(posixErr.code) {
             return true
         }
@@ -133,6 +147,11 @@ extension Error {
     /// True if the error results from a user cancellation, regardless of domain.
     public var isCancelledError: Bool {
         if let cocoaErr = self as? Foundation.CocoaError, cocoaErr.code == .userCancelled {
+            return true
+        }
+
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
+           let errno = self as? System.Errno, errno == .canceled {
             return true
         }
 
