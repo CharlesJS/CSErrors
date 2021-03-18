@@ -3,7 +3,7 @@
 //  CSErrors
 //
 //  Created by Charles Srstka on 4/17/20.
-//  Copyright © 2020 Charles Srstka. All rights reserved.
+//  Copyright © 2020-2021 Charles Srstka. All rights reserved.
 //
 
 import Foundation
