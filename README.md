@@ -7,6 +7,6 @@ A set of additions to `Error`, `CocoaError`, and `URLError` which provide some h
 - Easily wrap any `Error` in a `RecoverableError` to present recovery options in error dialogs.
 - Quickly and easily create a `CocoaError` or a `URLError` containing any of their supported `userInfo` dictionary keys.
 
-These additions are free for any use.
+These additions are free for any use under the terms of the MIT license.
 
 Charles Srstka
