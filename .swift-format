@@ -47,7 +47,7 @@
     "UseSingleLinePropertyGetter" : true,
     "UseSynthesizedInitializer" : true,
     "UseTripleSlashForDocumentationComments" : true,
-    "ValidateDocumentationComments" : false
+    "ValidateDocumentationComments" : true
   },
   "tabWidth" : 8,
   "version" : 1

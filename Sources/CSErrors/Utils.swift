@@ -111,10 +111,6 @@ private func cocoaCode(posixCode: POSIXError.Code, url: URL, isWrite: Bool) -> C
 ///     - description: A localized message describing what error occurred.
 ///         Corresponds to `NSLocalizedDescriptionKey` in the `userInfo` dictionary.
 ///         If provided, this value will be returned by the `localizedDescription` method.
-///     - failureReason: A localized message describing the reason for the failure.
-///         Corresponds to `NSLocalizedFailureReasonErrorKey` in the `userInfo` dictionary.
-///         If no value is provided for `description`, this value will be returned by the `localizedDescription`
-///         method.
 ///     - recoverySuggestion: A localized message describing how one might recover from the failure.
 ///         Corresponds to `NSLocalizedRecoverySuggestionErrorKey` in the `userInfo` dictionary.
 ///     - recoveryOptions: A localized message providing “help” text if the user requests help.
@@ -126,7 +122,7 @@ private func cocoaCode(posixCode: POSIXError.Code, url: URL, isWrite: Bool) -> C
 ///     - stringEncoding: The string encoding associated with this error, if any.
 ///         Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
 ///     - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
-///         If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
+///         If the URL is a `file` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
 ///         which is very useful for customizing the  error's `localizedDescription` based on the associated filename.
 ///     - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`
 ///         in the `userInfo` dictionary.
@@ -169,14 +165,10 @@ public func osStatusError(
     /// Create an `Error` from a Mach error code.
     ///
     /// - Parameters:
-    ///     - osStatus: The `OSStatus` error code to convert to an `Error`.
+    ///     - code: The Mach error code to convert to an `Error`.
     ///     - description: A localized message describing what error occurred.
     ///         Corresponds to `NSLocalizedDescriptionKey` in the `userInfo` dictionary.
     ///         If provided, this value will be returned by the `localizedDescription` method.
-    ///     - failureReason: A localized message describing the reason for the failure.
-    ///         Corresponds to `NSLocalizedFailureReasonErrorKey` in the `userInfo` dictionary.
-    ///         If no value is provided for `description`, this value will be returned by the `localizedDescription`
-    ///         method.
     ///     - recoverySuggestion: A localized message describing how one might recover from the failure.
     ///         Corresponds to `NSLocalizedRecoverySuggestionErrorKey` in the `userInfo` dictionary.
     ///     - recoveryOptions: A localized message providing “help” text if the user requests help.
@@ -188,7 +180,7 @@ public func osStatusError(
     ///     - stringEncoding: The string encoding associated with this error, if any.
     ///         Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
     ///     - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
-    ///         If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
+    ///         If the URL is a `file` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
     ///         which is very useful for customizing the  error's `localizedDescription` based on the associated filename.
     ///     - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`
     ///         in the `userInfo` dictionary.
@@ -224,14 +216,10 @@ public func osStatusError(
     /// Create an `Error` from an `IOReturn`.
     ///
     /// - Parameters:
-    ///     - osStatus: The `OSStatus` error code to convert to an `Error`.
+    ///     - code: The `IOReturn` error code to convert to an `Error`.
     ///     - description: A localized message describing what error occurred.
     ///         Corresponds to `NSLocalizedDescriptionKey` in the `userInfo` dictionary.
     ///         If provided, this value will be returned by the `localizedDescription` method.
-    ///     - failureReason: A localized message describing the reason for the failure.
-    ///         Corresponds to `NSLocalizedFailureReasonErrorKey` in the `userInfo` dictionary.
-    ///         If no value is provided for `description`, this value will be returned by the `localizedDescription`
-    ///         method.
     ///     - recoverySuggestion: A localized message describing how one might recover from the failure.
     ///         Corresponds to `NSLocalizedRecoverySuggestionErrorKey` in the `userInfo` dictionary.
     ///     - recoveryOptions: A localized message providing “help” text if the user requests help.
@@ -243,7 +231,7 @@ public func osStatusError(
     ///     - stringEncoding: The string encoding associated with this error, if any.
     ///         Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
     ///     - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
-    ///         If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
+    ///         If the URL is a `file` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
     ///         which is very useful for customizing the  error's `localizedDescription` based on the associated filename.
     ///     - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`
     ///         in the `userInfo` dictionary.
@@ -300,7 +288,7 @@ public func osStatusError(
 ///   - stringEncoding: The string encoding associated with this error, if any.
 ///       Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
 ///   - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
-///       If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
+///       If the URL is a `file` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
 ///       which is very useful for customizing the display of `CocoaError` errors and other errors which customize
 ///       their `localizedDescription` based on the associated filename.
 ///   - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`

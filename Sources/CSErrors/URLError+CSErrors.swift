@@ -30,7 +30,7 @@ extension URLError {
     ///     - stringEncoding: The string encoding associated with this error, if any.
     ///         Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
     ///     - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
-    ///         If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary.
+    ///         If the URL is a `file` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary.
     ///     - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`
     ///         in the `userInfo` dictionary.
     ///     - custom: A dictionary containing additional key-value pairs to insert in the `userInfo` dictionary.
