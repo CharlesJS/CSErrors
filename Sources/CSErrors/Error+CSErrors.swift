@@ -8,24 +8,23 @@
 import Foundation
 
 #if canImport(System)
-import System
+    import System
 #endif
 
 extension Error {
-    /**
-     A helper for adding recoverability to an existing error. When passed to error presentation  methods such as macOS's
-     `NSApplication.presentError` method, multiple buttons will appear in the resulting error dialog, some of which
-     will allow the method to be recovered.
-     - Parameters:
-         - recoveryOptions: Provides a set of possible recovery options to present to the user.
-         - attempter: A closure which should attempt to recover from this error when the user selected
-             the option at the given index.
-             Return true from this closure to indicate successful recovery, and false otherwise.
-         - asyncAttempter: An optional asynchronous closure which should attempt to recover from this
-             error when the user selected the option at the given index.
-             Pass true to the passed-in closure to indicate successful recovery, and false otherwise.
-     - Returns: An error which responds to the `RecoverableError` protocol.
-     */
+    /// A helper for adding recoverability to an existing error.
+    ///
+    /// When passed to error presentation  methods such as macOS's `NSApplication.presentError` method, multiple buttons will appear in the resulting error
+    /// dialog, some of which will allow the method to be recovered.
+    /// - Parameters:
+    ///     - recoveryOptions: Provides a set of possible recovery options to present to the user.
+    ///     - attempter: A closure which should attempt to recover from this error when the user selected
+    ///         the option at the given index.
+    ///         Return true from this closure to indicate successful recovery, and false otherwise.
+    ///     - asyncAttempter: An optional asynchronous closure which should attempt to recover from this
+    ///         error when the user selected the option at the given index.
+    ///         Pass true to the passed-in closure to indicate successful recovery, and false otherwise.
+    /// - Returns: An error which responds to the `RecoverableError` protocol.
     public func makeRecoverable(
         recoveryOptions: [String],
         attempter: @escaping (Int) -> Bool,
@@ -39,20 +38,19 @@ extension Error {
         )
     }
 
-    /**
-     A helper for adding recoverability to an existing error. When passed to error presentation  methods such as macOS's
-     `NSApplication.presentError` method, multiple buttons will appear in the resulting error dialog, some of which
-     will allow the method to be recovered.
-     - Parameters:
-         - continueButtonTitle: The localized title that should appear for the “Continue” button
-             in an error presentation dialog.
-         - cancelButtonTitle: The localized title that should appear for the “Cancel” button in an error
-             presentation dialog.
-         - continueIsDefault: `true` if the “Continue” button should be the default option,
-             `false` if “Cancel” should be the default.
-             Defaults to `true`.
-     - Returns: An error which responds to the `RecoverableError` protocol.
-     */
+    /// A helper for adding recoverability to an existing error.
+    ///
+    /// When passed to error presentation  methods such as macOS's `NSApplication.presentError` method, multiple buttons will appear in the resulting error
+    /// dialog, some of which will allow the method to be recovered.
+    /// - Parameters:
+    ///  - continueButtonTitle: The localized title that should appear for the “Continue” button
+    ///      in an error presentation dialog.
+    ///  - cancelButtonTitle: The localized title that should appear for the “Cancel” button in an error
+    ///      presentation dialog.
+    ///  - continueIsDefault: `true` if the “Continue” button should be the default option,
+    ///      `false` if “Cancel” should be the default.
+    ///      Defaults to `true`.
+    /// - Returns: An error which responds to the `RecoverableError` protocol.
     public func makeRecoverable(
         continueButtonTitle: String,
         cancelButtonTitle: String,
@@ -85,7 +83,8 @@ extension Error {
     /// True if the error represents a “File Not Found” error, regardless of domain.
     public var isFileNotFoundError: Bool {
         if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
-           let errno = self as? System.Errno, errno == .noSuchFileOrDirectory {
+            let errno = self as? System.Errno, errno == .noSuchFileOrDirectory
+        {
             return true
         }
 
@@ -116,7 +115,8 @@ extension Error {
     /// True if the error represents a permission or access error, regardless of domain.
     public var isPermissionError: Bool {
         if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
-           let errno = self as? System.Errno, [.permissionDenied, .notPermitted].contains(errno) {
+            let errno = self as? System.Errno, [.permissionDenied, .notPermitted].contains(errno)
+        {
             return true
         }
 
@@ -151,7 +151,8 @@ extension Error {
         }
 
         if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
-           let errno = self as? System.Errno, errno == .canceled {
+            let errno = self as? System.Errno, errno == .canceled
+        {
             return true
         }
 
@@ -163,9 +164,11 @@ extension Error {
             return true
         }
 
-        let osStatusErrors = [userCanceledErr, errAEWaitCanceled, kernelCanceledErr, kOTCanceledErr, kECANCELErr,
-                              errIACanceled, kRAConnectionCanceled, kTXNUserCanceledOperationErr,
-                              kFBCindexingCanceled, kFBCaccessCanceled, kFBCsummarizationCanceled]
+        let osStatusErrors = [
+            userCanceledErr, errAEWaitCanceled, kernelCanceledErr, kOTCanceledErr, kECANCELErr,
+            errIACanceled, kRAConnectionCanceled, kTXNUserCanceledOperationErr,
+            kFBCindexingCanceled, kFBCaccessCanceled, kFBCsummarizationCanceled,
+        ]
         if let osStatus = self as? OSStatus, osStatusErrors.contains(Int(osStatus)) {
             return true
         }
