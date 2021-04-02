@@ -12,6 +12,10 @@ import Foundation
     import System
 #endif
 
+#if canImport(Darwin)
+    import Darwin
+#endif
+
 /// Create an `Error` corresponding to a POSIX error code.
 ///
 /// If `url` is provided, this method will wrap the resulting error in a `CocoaError`, if applicable.
@@ -161,12 +165,116 @@ public func osStatusError(
     return NSError(domain: NSOSStatusErrorDomain, code: Int(osStatus), userInfo: userInfo)
 }
 
-/// foo.
-///
-/// - Parameter:
-///   - bar: A bar.
-public func foo(bar: String) {
-}
+#if canImport(Darwin)
+    /// Create an `Error` from a Mach error code.
+    ///
+    /// - Parameters:
+    ///     - osStatus: The `OSStatus` error code to convert to an `Error`.
+    ///     - description: A localized message describing what error occurred.
+    ///         Corresponds to `NSLocalizedDescriptionKey` in the `userInfo` dictionary.
+    ///         If provided, this value will be returned by the `localizedDescription` method.
+    ///     - failureReason: A localized message describing the reason for the failure.
+    ///         Corresponds to `NSLocalizedFailureReasonErrorKey` in the `userInfo` dictionary.
+    ///         If no value is provided for `description`, this value will be returned by the `localizedDescription`
+    ///         method.
+    ///     - recoverySuggestion: A localized message describing how one might recover from the failure.
+    ///         Corresponds to `NSLocalizedRecoverySuggestionErrorKey` in the `userInfo` dictionary.
+    ///     - recoveryOptions: A localized message providing “help” text if the user requests help.
+    ///         Corresponds to `NSLocalizedRecoveryOptionsErrorKey` in the `userInfo` dictionary.
+    ///     - recoveryAttempter: An object that conforms to the `NSErrorRecoveryAttempting` informal protocol.
+    ///         Corresponds to `NSRecoveryAttempterErrorKey` in the `userInfo` dictionary.
+    ///     - helpAnchor: A string to display in response to an alert panel help anchor button being pressed.
+    ///         Corresponds to `NSHelpAnchorErrorKey` in the `userInfo` dictionary.
+    ///     - stringEncoding: The string encoding associated with this error, if any.
+    ///         Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
+    ///     - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
+    ///         If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
+    ///         which is very useful for customizing the  error's `localizedDescription` based on the associated filename.
+    ///     - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`
+    ///         in the `userInfo` dictionary.
+    ///     - custom: A dictionary containing additional key-value pairs to insert in the `userInfo` dictionary.
+    /// - Returns: An `Error` representing the Mach error code.
+    public func machError(
+        _ code: kern_return_t,
+        description: String? = nil,
+        recoverySuggestion: String? = nil,
+        recoveryOptions: [String]? = nil,
+        recoveryAttempter: Any? = nil,
+        helpAnchor: String? = nil,
+        stringEncoding: String.Encoding? = nil,
+        url: URL? = nil,
+        underlying: Error? = nil,
+        custom: [String: Any]? = nil
+    ) -> Error {
+        let userInfo = makeErrorUserInfo(
+            description: description,
+            recoverySuggestion: recoverySuggestion,
+            recoveryOptions: recoveryOptions,
+            recoveryAttempter: recoveryAttempter,
+            helpAnchor: helpAnchor,
+            stringEncoding: stringEncoding,
+            url: url,
+            underlying: underlying,
+            custom: custom
+        )
+
+        return NSError(domain: NSMachErrorDomain, code: Int(code), userInfo: userInfo)
+    }
+
+    /// Create an `Error` from an `IOReturn`.
+    ///
+    /// - Parameters:
+    ///     - osStatus: The `OSStatus` error code to convert to an `Error`.
+    ///     - description: A localized message describing what error occurred.
+    ///         Corresponds to `NSLocalizedDescriptionKey` in the `userInfo` dictionary.
+    ///         If provided, this value will be returned by the `localizedDescription` method.
+    ///     - failureReason: A localized message describing the reason for the failure.
+    ///         Corresponds to `NSLocalizedFailureReasonErrorKey` in the `userInfo` dictionary.
+    ///         If no value is provided for `description`, this value will be returned by the `localizedDescription`
+    ///         method.
+    ///     - recoverySuggestion: A localized message describing how one might recover from the failure.
+    ///         Corresponds to `NSLocalizedRecoverySuggestionErrorKey` in the `userInfo` dictionary.
+    ///     - recoveryOptions: A localized message providing “help” text if the user requests help.
+    ///         Corresponds to `NSLocalizedRecoveryOptionsErrorKey` in the `userInfo` dictionary.
+    ///     - recoveryAttempter: An object that conforms to the `NSErrorRecoveryAttempting` informal protocol.
+    ///         Corresponds to `NSRecoveryAttempterErrorKey` in the `userInfo` dictionary.
+    ///     - helpAnchor: A string to display in response to an alert panel help anchor button being pressed.
+    ///         Corresponds to `NSHelpAnchorErrorKey` in the `userInfo` dictionary.
+    ///     - stringEncoding: The string encoding associated with this error, if any.
+    ///         Corresponds to `NSStringEncodingErrorKey` in the `userInfo` dictionary.
+    ///     - url: A URL associated with the error. Corresponds to `NSURLErrorKey` in the `userInfo` dictionary.
+    ///         If the URL is a `file:` URL, this also sets `NSFilePathErrorKey` in the `userInfo` dictionary,
+    ///         which is very useful for customizing the  error's `localizedDescription` based on the associated filename.
+    ///     - underlying: The underlying error which caused this error, if any. Corresponds to `NSUnderlyingErrorKey`
+    ///         in the `userInfo` dictionary.
+    ///     - custom: A dictionary containing additional key-value pairs to insert in the `userInfo` dictionary.
+    /// - Returns: An `Error` representing the `IOReturn`.
+    public func ioKitError(
+        _ code: IOReturn,
+        description: String? = nil,
+        recoverySuggestion: String? = nil,
+        recoveryOptions: [String]? = nil,
+        recoveryAttempter: Any? = nil,
+        helpAnchor: String? = nil,
+        stringEncoding: String.Encoding? = nil,
+        url: URL? = nil,
+        underlying: Error? = nil,
+        custom: [String: Any]? = nil
+    ) -> Error {
+        machError(
+            kern_return_t(code),
+            description: description,
+            recoverySuggestion: recoverySuggestion,
+            recoveryOptions: recoveryOptions,
+            recoveryAttempter: recoveryAttempter,
+            helpAnchor: helpAnchor,
+            stringEncoding: stringEncoding,
+            url: url,
+            underlying: underlying,
+            custom: custom
+        )
+    }
+#endif
 
 /// A helper for quickly making `userInfo` dictionaries.
 ///
