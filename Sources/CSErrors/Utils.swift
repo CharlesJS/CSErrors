@@ -161,6 +161,54 @@ public func osStatusError(
     return NSError(domain: NSOSStatusErrorDomain, code: Int(osStatus), userInfo: userInfo)
 }
 
+/// Call an API that returns an OSStatus, throwing an error if it fails.
+///
+/// - Parameters:
+///     - errorDescription: The description of the error, in the case where the API fails.
+///     - url: The URL of a file associated with this operation.
+///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
+///     - closure: A closure which returns an `OSStatus` as its result code.
+public func callOSStatusAPI(
+    errorDescription: String? = nil,
+    url: URL? = nil,
+    customErrorUserInfo: [String : Any]? = nil,
+    closure: () -> OSStatus
+) throws {
+    let err = closure()
+
+    guard err == noErr else {
+        throw osStatusError(err, description: errorDescription, url: url, custom: customErrorUserInfo)
+    }
+}
+
+/// Call an API that returns an `OSStatus` and returns a value by reference, throwing an error if it fails.
+///
+/// - Parameters:
+///     - errorDescription: The description of the error, in the case where the API fails.
+///     - url: The URL of a file associated with this operation.
+///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
+///     - closure: A closure which returns an `OSStatus` as its result code.
+public func callOSStatusAPI<T>(
+    errorDescription: String? = nil,
+    url: URL? = nil,
+    customErrorUserInfo: [String : Any]? = nil,
+    closure: (UnsafeMutablePointer<T?>) -> OSStatus
+) throws -> T {
+    var ret: T? = nil
+    let err = closure(&ret)
+
+    guard err == noErr, let ret = ret else {
+        throw osStatusError(
+            err != noErr ? err : OSStatus(coreFoundationUnknownErr),
+            description: errorDescription,
+            url: url,
+            custom: customErrorUserInfo
+        )
+    }
+
+    return ret
+}
+
 #if canImport(Darwin)
     /// Create an `Error` from a Mach error code.
     ///
@@ -261,6 +309,49 @@ public func osStatusError(
             underlying: underlying,
             custom: custom
         )
+    }
+
+    /// Call an API that returns an `IOReturn`, throwing an error if it fails.
+    ///
+    /// - Parameters:
+    ///     - errorDescription: The description of the error, in the case where the API fails.
+    ///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
+    ///     - closure: A closure which returns an `OSStatus` as its result code.
+    public func callIOKitAPI(
+        errorDescription: String? = nil,
+        customErrorUserInfo: [String : Any]? = nil,
+        closure: () -> IOReturn
+    ) throws {
+        let err = closure()
+
+        guard err == kIOReturnSuccess else {
+            throw ioKitError(err, description: errorDescription, custom: customErrorUserInfo)
+        }
+    }
+
+    /// Call an API that returns an `IOReturn` and returns a value by reference, throwing an error if it fails.
+    ///
+    /// - Parameters:
+    ///     - errorDescription: The description of the error, in the case where the API fails.
+    ///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
+    ///     - closure: A closure which returns an `OSStatus` as its result code.
+    public func callIOKitAPI<T>(
+        errorDescription: String? = nil,
+        customErrorUserInfo: [String : Any]? = nil,
+        closure: (UnsafeMutablePointer<T?>) -> IOReturn
+    ) throws -> T {
+        var ret: T? = nil
+        let err = closure(&ret)
+
+        guard err == kIOReturnSuccess, let ret = ret else {
+            throw ioKitError(
+                err != kIOReturnSuccess ? err : KERN_FAILURE,
+                description: errorDescription,
+                custom: customErrorUserInfo
+            )
+        }
+
+        return ret
     }
 #endif
 
