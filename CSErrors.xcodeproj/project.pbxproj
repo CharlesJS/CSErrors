@@ -14,7 +14,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		28E6A53A2616D2E600ABDA4C /* .swift-format */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".swift-format"; sourceTree = "<group>"; };
 		28F83F5C24497394008BD2DC /* libCSErrors.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCSErrors.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		28F83F68244973C4008BD2DC /* Error+CSErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error+CSErrors.swift"; sourceTree = "<group>"; };
 		28F83F6C244AAAA6008BD2DC /* CocoaError+CSErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CocoaError+CSErrors.swift"; sourceTree = "<group>"; };
@@ -40,7 +39,6 @@
 			children = (
 				28F83F75244AAC30008BD2DC /* README.md */,
 				28F83F74244AABBD008BD2DC /* Package.swift */,
-				28E6A53A2616D2E600ABDA4C /* .swift-format */,
 				28F83F73244AABA8008BD2DC /* Sources */,
 				28F83F5D24497394008BD2DC /* Products */,
 			);
@@ -93,7 +91,6 @@
 				28F83F5824497394008BD2DC /* Headers */,
 				28F83F5924497394008BD2DC /* Sources */,
 				28F83F5A24497394008BD2DC /* Frameworks */,
-				28F83F6A24497489008BD2DC /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -138,26 +135,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		28F83F6A24497489008BD2DC /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if which swift-format >/dev/null; then\n  swift-format format -ir .\n  swift-format lint -r .\nelif which mint >/dev/null; then\n  mint run apple/swift-format format -ir .\n  mint run apple/swift-format lint -r .\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		28F83F5924497394008BD2DC /* Sources */ = {
