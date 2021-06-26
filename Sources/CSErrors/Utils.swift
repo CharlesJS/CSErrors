@@ -188,6 +188,29 @@ public func callOSStatusAPI(
 ///     - url: The URL of a file associated with this operation.
 ///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
 ///     - closure: A closure which returns an `OSStatus` as its result code.
+public func callOSStatusAPI<T: Numeric>(
+    errorDescription: String? = nil,
+    url: URL? = nil,
+    customErrorUserInfo: [String : Any]? = nil,
+    closure: (UnsafeMutablePointer<T>) -> OSStatus
+) throws -> T {
+    var ret = 0 as T
+    let err = closure(&ret)
+
+    guard err == noErr else {
+        throw osStatusError(err, description: errorDescription, url: url, custom: customErrorUserInfo)
+    }
+
+    return ret
+}
+
+/// Call an API that returns an `OSStatus` and returns a value by reference, throwing an error if it fails.
+///
+/// - Parameters:
+///     - errorDescription: The description of the error, in the case where the API fails.
+///     - url: The URL of a file associated with this operation.
+///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
+///     - closure: A closure which returns an `OSStatus` as its result code.
 public func callOSStatusAPI<T>(
     errorDescription: String? = nil,
     url: URL? = nil,
@@ -327,6 +350,27 @@ public func callOSStatusAPI<T>(
         guard err == kIOReturnSuccess else {
             throw ioKitError(err, description: errorDescription, custom: customErrorUserInfo)
         }
+    }
+
+    /// Call an API that returns an `IOReturn` and returns a value by reference, throwing an error if it fails.
+    ///
+    /// - Parameters:
+    ///     - errorDescription: The description of the error, in the case where the API fails.
+    ///     - customErrorUserInfo: Custom user info to attach to an error, if one occurs.
+    ///     - closure: A closure which returns an `OSStatus` as its result code.
+public func callIOKitAPI<T: Numeric>(
+        errorDescription: String? = nil,
+        customErrorUserInfo: [String : Any]? = nil,
+        closure: (UnsafeMutablePointer<T>) -> IOReturn
+    ) throws -> T {
+        var ret = 0 as T
+        let err = closure(&ret)
+
+        guard err == kIOReturnSuccess else {
+            throw ioKitError(err, description: errorDescription, custom: customErrorUserInfo)
+        }
+
+        return ret
     }
 
     /// Call an API that returns an `IOReturn` and returns a value by reference, throwing an error if it fails.
