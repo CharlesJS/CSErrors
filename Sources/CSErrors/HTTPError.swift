@@ -8,7 +8,9 @@ public struct HTTPError: LocalizedError {
     }
 
     public var failureReason: String? {
-        HTTPURLResponse.localizedString(forStatusCode: self.statusCode)
+        let errString = HTTPURLResponse.localizedString(forStatusCode: self.statusCode)
+
+        return "HTTP \(self.statusCode) (\(errString))"
     }
 
     public var errorDescription: String? { self.failureReason }
