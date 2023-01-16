@@ -1,6 +1,4 @@
-import Foundation
-
-public struct HTTPError: LocalizedError {
+public struct HTTPError: CSErrorProtocol {
     public let statusCode: Int
 
     public init(statusCode: Int) {
@@ -8,13 +6,24 @@ public struct HTTPError: LocalizedError {
     }
 
     public var failureReason: String? {
-        let errString = HTTPURLResponse.localizedString(forStatusCode: self.statusCode)
+        var reason = "HTTP \(self.statusCode)"
 
-        return "HTTP \(self.statusCode) (\(errString))"
+        if let i = self as? any _CSErrorsHTTPErrorInternal {
+            reason += " (\(i.statusCodeString))"
+        }
+
+        return reason
     }
 
     public var errorDescription: String? { self.failureReason }
 
+    public var isFileNotFoundError: Bool { self.statusCode == 404 }
+    public var isPermissionError: Bool { [401, 403, 407].contains(self.statusCode) }
+    public var isCancelledError: Bool { false }
+
     public var _code: Int { self.statusCode }
 }
 
+@_spi(CSErrorsInternal) public protocol _CSErrorsHTTPErrorInternal {
+    var statusCodeString: String { get }
+}

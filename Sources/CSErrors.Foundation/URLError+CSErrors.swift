@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CSErrors
 
 extension URLError {
     /// Create a `URLError` with an associated `userInfo` dictionary.
@@ -44,14 +45,13 @@ extension URLError {
         helpAnchor: String? = nil,
         stringEncoding: String.Encoding? = nil,
         url: URL? = nil,
-        underlying: Error? = nil,
+        underlying: (any Error)? = nil,
         custom: [String: Any]? = nil
     ) {
-        let userInfo = makeErrorUserInfo(
+        let metadata = ErrorMetadata(
             description: description,
             failureReason: failureReason,
-            recoverySuggestion:
-                recoverySuggestion,
+            recoverySuggestion: recoverySuggestion,
             recoveryOptions: recoveryOptions,
             recoveryAttempter: recoveryAttempter,
             helpAnchor: helpAnchor,
@@ -61,6 +61,20 @@ extension URLError {
             custom: custom
         )
 
-        self.init(code, userInfo: userInfo)
+        self.init(code, userInfo: metadata.toUserInfo())
+    }
+}
+
+extension URLError: CSErrorProtocol {
+    public var isFileNotFoundError: Bool {
+        self.code == .fileDoesNotExist
+    }
+
+    public var isPermissionError: Bool {
+        self.code == .noPermissionsToReadFile
+    }
+
+    public var isCancelledError: Bool {
+        [.cancelled, .userCancelledAuthentication].contains(self.code)
     }
 }

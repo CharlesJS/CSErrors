@@ -1,14 +1,16 @@
 //
-//  CocoaError+CSErrors.swift
-//  CSErrors
+//  ErrorMetadata+Foundation.swift
+//  
 //
-//  Created by Charles Srstka on 4/17/20.
+//  Created by Charles Srstka on 1/11/23.
 //
 
 import Foundation
+import System
+import CSErrors
 
-extension CocoaError {
-    /// Create a `CocoaError` with an associated `userInfo` dictionary.
+extension ErrorMetadata {
+    /// Create an `ErrorMetadata` representing metadata for an error.
     ///
     /// In many cases, the resulting error's `localizedDescription` will be adjusted based on the provided information.
     /// - Parameters:
@@ -37,7 +39,6 @@ extension CocoaError {
     ///         in the `userInfo` dictionary.
     ///     - custom: A dictionary containing additional key-value pairs to insert in the `userInfo` dictionary.
     public init(
-        _ code: Code,
         description: String? = nil,
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
@@ -46,22 +47,108 @@ extension CocoaError {
         helpAnchor: String? = nil,
         stringEncoding: String.Encoding? = nil,
         url: URL? = nil,
-        underlying: Error? = nil,
-        custom: [String: Any]? = nil
+        underlying: (any Error)? = nil,
+        custom _custom: [String: Any]? = nil
     ) {
-        let userInfo = makeErrorUserInfo(
+        var custom = _custom ?? [:]
+        var path: String? = nil
+
+        if let url {
+            custom[NSURLErrorKey] = url
+
+            if url.isFileURL {
+                path = url.path
+            }
+        }
+
+        if let stringEncoding {
+            custom[NSStringEncodingErrorKey] = stringEncoding.rawValue
+        }
+
+        self.init(
             description: description,
             failureReason: failureReason,
             recoverySuggestion: recoverySuggestion,
             recoveryOptions: recoveryOptions,
             recoveryAttempter: recoveryAttempter,
             helpAnchor: helpAnchor,
-            stringEncoding: stringEncoding,
-            url: url,
+            path: path,
             underlying: underlying,
             custom: custom
         )
+    }
 
-        self.init(code, userInfo: userInfo)
+    /// Export this error's metadata as a `userInfo` dictionary.
+    ///
+    /// This can be useful when implementing the `CustomNSError` protocol, and for associating data with other
+    /// error classes that take `userInfo` dictionaries (such as `CocoaError`).
+    ///
+    /// - Returns: A `userInfo` dictionary, suitable for implementing `CustomNSError`'s `userInfo` property.
+    public func toUserInfo() -> [String : Any] {
+        var userInfo = [String: Any]()
+
+        if let desc = self.description {
+            userInfo[NSLocalizedDescriptionKey] = desc
+        } else if let failureReason = failureReason {
+            userInfo[NSLocalizedDescriptionKey] = failureReason
+        }
+
+        if let failureReason = self.failureReason {
+            userInfo[NSLocalizedFailureReasonErrorKey] = failureReason
+        }
+
+        if let suggestion = self.recoverySuggestion {
+            userInfo[NSLocalizedRecoverySuggestionErrorKey] = suggestion
+        }
+
+        if let options = self.recoveryOptions {
+            userInfo[NSLocalizedRecoveryOptionsErrorKey] = options
+        }
+
+        if let attempter = self.recoveryAttempter {
+            userInfo[NSRecoveryAttempterErrorKey] = attempter
+        }
+
+        if let anchor = self.helpAnchor {
+            userInfo[NSHelpAnchorErrorKey] = anchor
+        }
+
+        if let underlying = underlying {
+            userInfo[NSUnderlyingErrorKey] = underlying
+        }
+
+        if let path = self.pathString {
+            userInfo[NSFilePathErrorKey] = path
+            userInfo[NSURLErrorKey] = URL(fileURLWithPath: path)
+        }
+
+        if let custom = custom {
+            for (key, value) in custom {
+                userInfo[key] = value
+            }
+        }
+
+        return userInfo
+    }
+
+    public var url: URL? {
+        if let url = self.custom?[NSURLErrorKey] as? URL {
+            return url
+        }
+
+        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.1, *),
+           let path = self.path, let url = URL(filePath: path) {
+            return url
+        } else if let path = self.pathString {
+            return URL(fileURLWithPath: path)
+        }
+
+        return nil
+    }
+
+    public var stringEncoding: String.Encoding? {
+        guard let rawEncoding = self.custom?[NSStringEncodingErrorKey] as? UInt else { return nil }
+
+        return String.Encoding(rawValue: rawEncoding)
     }
 }
