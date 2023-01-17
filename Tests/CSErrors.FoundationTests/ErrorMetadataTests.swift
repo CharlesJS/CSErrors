@@ -5,7 +5,7 @@
 //  Created by Charles Srstka on 1/16/23.
 //
 
-import CSErrors
+@testable import CSErrors
 import CSErrors_Foundation
 import System
 import XCTest
@@ -155,5 +155,37 @@ class ErrorMetadataTests: XCTestCase {
         XCTAssertNil(metadata.path)
         XCTAssertNil(metadata.pathString)
         XCTAssertNil(metadata.toUserInfo()[NSFilePathErrorKey])
+    }
+
+    func testOnMacOS12() {
+        let pathMetadata = ErrorMetadata(path: FilePath("/usr/bin/something"))
+        let stringMetadata = ErrorMetadata(path: "/omg/wtf/bbq")
+
+        emulateMacOSVersion(12) {
+            XCTAssertEqual(pathMetadata.url, URL(filePath: "/usr/bin/something"))
+            XCTAssertEqual(stringMetadata.url, URL(filePath: "/omg/wtf/bbq"))
+        }
+    }
+
+    func testOnMacOS11() {
+        let pathMetadata = ErrorMetadata(path: FilePath("/usr/bin/something"))
+        let stringMetadata = ErrorMetadata(path: "/omg/wtf/bbq")
+
+        emulateMacOSVersion(11) {
+            XCTAssertEqual(pathMetadata.pathString, "/usr/bin/something")
+            XCTAssertEqual(stringMetadata.pathString, "/omg/wtf/bbq")
+            XCTAssertEqual(pathMetadata.url, URL(filePath: "/usr/bin/something"))
+            XCTAssertEqual(stringMetadata.url, URL(filePath: "/omg/wtf/bbq"))
+        }
+    }
+
+    func testFailOnMacOS10() {
+        let pathMetadata = ErrorMetadata(path: FilePath("/usr/bin/something"))
+
+        emulateMacOSVersion(10) {
+            let failMessage = allowFailure { _ = pathMetadata.pathString }
+
+            XCTAssertEqual(failMessage, "Should not be reached")
+        }
     }
 }

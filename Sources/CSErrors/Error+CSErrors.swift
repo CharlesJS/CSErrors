@@ -18,7 +18,7 @@ import Glibc
 extension Error {
     /// True if the error represents a “File Not Found” error, regardless of domain.
     public var isFileNotFoundError: Bool {
-        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11),
            let errno = self as? System.Errno, errno == .noSuchFileOrDirectory {
             return true
         }
@@ -42,7 +42,7 @@ extension Error {
 
     /// True if the error represents a permission or access error, regardless of domain.
     public var isPermissionError: Bool {
-        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11),
             let errno = self as? System.Errno, [.permissionDenied, .notPermitted].contains(errno)
         {
             return true
@@ -67,7 +67,7 @@ extension Error {
 
     /// True if the error results from a user cancellation, regardless of domain.
     public var isCancelledError: Bool {
-        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11),
             let errno = self as? System.Errno, errno == .canceled
         {
             return true

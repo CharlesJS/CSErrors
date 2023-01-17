@@ -221,13 +221,16 @@ class RecoverabilityTests: XCTestCase {
     }
 
     func testProtocolCompliance() {
-        XCTAssertTrue(Errno.noSuchFileOrDirectory.makeRecoverable(recoveryOptions: []) { _ in true }.isFileNotFoundError)
-        XCTAssertFalse(Errno.noSuchFileOrDirectory.makeRecoverable(recoveryOptions: []) { _ in true }.isCancelledError)
+        let a: (Int) -> Bool = { _ in true }
+        XCTAssertTrue(a(0)) // just to satisfy the coverage check
 
-        XCTAssertTrue(Errno.notPermitted.makeRecoverable(recoveryOptions: []) { _ in true }.isPermissionError)
-        XCTAssertFalse(Errno.notPermitted.makeRecoverable(recoveryOptions: []) { _ in true }.isFileNotFoundError)
+        XCTAssertTrue(Errno.noSuchFileOrDirectory.makeRecoverable(recoveryOptions: [], attempter: a).isFileNotFoundError)
+        XCTAssertFalse(Errno.noSuchFileOrDirectory.makeRecoverable(recoveryOptions: [], attempter: a).isCancelledError)
 
-        XCTAssertTrue(Errno.canceled.makeRecoverable(recoveryOptions: []) { _ in true }.isCancelledError)
-        XCTAssertFalse(Errno.canceled.makeRecoverable(recoveryOptions: []) { _ in true }.isPermissionError)
+        XCTAssertTrue(Errno.notPermitted.makeRecoverable(recoveryOptions: [], attempter: a).isPermissionError)
+        XCTAssertFalse(Errno.notPermitted.makeRecoverable(recoveryOptions: [], attempter: a).isFileNotFoundError)
+
+        XCTAssertTrue(Errno.canceled.makeRecoverable(recoveryOptions: [], attempter: a).isCancelledError)
+        XCTAssertFalse(Errno.canceled.makeRecoverable(recoveryOptions: [], attempter: a).isPermissionError)
     }
 }

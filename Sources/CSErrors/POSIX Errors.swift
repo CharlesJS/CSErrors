@@ -19,7 +19,8 @@ internal var posixErrorDomain: String { "NSPOSIXErrorDomain" }
 
 extension Error {
     public func toErrno() -> Int32? {
-        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), let err = self as? System.Errno {
+        if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11),
+           let err = self as? System.Errno {
             return err.rawValue
         }
 
@@ -83,7 +84,7 @@ public func errno(_ code: Int32? = nil, path: String? = nil, isWrite: Bool = fal
         return GenericError.unknownError(isWrite: isWrite)
     }
 
-    guard #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *) else {
+    guard #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11) else {
         return GenericError(_domain: "NSPOSIXErrorDomain", _code: Int(code))
     }
 

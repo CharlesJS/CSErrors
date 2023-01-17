@@ -115,6 +115,18 @@ class POSIXErrorTests: XCTestCase {
         )
     }
 
+    func testErrnoOnMacOS10() {
+        emulateMacOSVersion(10) {
+            for eachCode in [EINVAL, EBADF, ECANCELED] {
+                let err = errno(eachCode)
+
+                XCTAssertTrue(err is GenericError)
+                XCTAssertEqual(err._domain, NSPOSIXErrorDomain)
+                XCTAssertEqual(err._code, Int(eachCode))
+            }
+        }
+    }
+
     func testFunctionWithZeroReturn() throws {
         let url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
 

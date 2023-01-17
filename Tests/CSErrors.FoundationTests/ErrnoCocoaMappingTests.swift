@@ -55,4 +55,30 @@ class ErrnoCocoaMappingTests: XCTestCase {
         XCTAssertEqual(errno(0, isWrite: false) as? CocoaError, CocoaError(.fileReadUnknown))
         XCTAssertEqual(errno(0, isWrite: true) as? CocoaError, CocoaError(.fileWriteUnknown))
     }
+
+    func testURLPropagationOnOldMacOS() {
+        func check() {
+            let err = errno(ENOENT, path: FilePath("/omg/wtf/bbq"))
+
+            XCTAssert(err is CocoaError)
+            XCTAssertEqual((err as? CocoaError)?.code, .fileReadNoSuchFile)
+            XCTAssertEqual((err as? CocoaError)?.userInfo[NSFilePathErrorKey] as? String, "/omg/wtf/bbq")
+            XCTAssertEqual((err as? CocoaError)?.userInfo[NSURLErrorKey] as? URL, URL(filePath: "/omg/wtf/bbq"))
+        }
+
+        emulateMacOSVersion(12, closure: check)
+        emulateMacOSVersion(11, closure: check)
+    }
+
+    func testReturnPOSIXErrorOnMacOS10() {
+        emulateMacOSVersion(10) {
+            for eachCode in [EINVAL, EBADF, EINTR] {
+                let err = errno(eachCode)
+
+                XCTAssertFalse(err is Errno)
+                XCTAssertTrue(err is POSIXError)
+                XCTAssertEqual(err as? POSIXError, POSIXError(.init(rawValue: eachCode)!))
+            }
+        }
+    }
 }

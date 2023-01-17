@@ -7,7 +7,7 @@
 
 import Foundation
 import System
-import CSErrors
+@_spi(CSErrorsInternal) import CSErrors
 
 extension ErrorMetadata {
     /// Create an `ErrorMetadata` representing metadata for an error.
@@ -136,7 +136,7 @@ extension ErrorMetadata {
             return url
         }
 
-        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.1, *),
+        if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.1, *), versionCheck(13),
            let path = self.path, let url = URL(filePath: path) {
             return url
         } else if let path = self.pathString {
