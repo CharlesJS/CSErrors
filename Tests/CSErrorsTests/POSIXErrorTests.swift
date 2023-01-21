@@ -201,6 +201,18 @@ class POSIXErrorTests: XCTestCase {
         }
     }
 
+    func testFunctionWithNotSpecificReturn() {
+        XCTAssertNoThrow(try callPOSIXFunction(expect: .notSpecific(-1)) { fcntl(STDOUT_FILENO, F_GETFD) })
+
+        self.assertErrno(.badFileDescriptor) {
+            try callPOSIXFunction(expect: .notSpecific(-1)) { fcntl(-99, F_GETFD) }
+        }
+
+        func returnsOtherNegative() -> Int32 { -2 }
+
+        XCTAssertNoThrow(try callPOSIXFunction(expect: .notSpecific(-1)) { returnsOtherNegative() })
+    }
+
     func testReturnByReference() throws {
         var url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
         try "Hello World".write(to: url, atomically: true, encoding: .ascii)

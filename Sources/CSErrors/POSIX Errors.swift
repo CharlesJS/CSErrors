@@ -95,6 +95,7 @@ public enum POSIXReturnExpectation {
     case zero
     case nonNegative
     case specific(Int32)
+    case notSpecific(Int32)
 }
 
 public enum POSIXErrorReturn {
@@ -184,6 +185,8 @@ public func callPOSIXFunction<T>(
         success = returnValue >= 0
     case .specific(let specificValue):
         success = returnValue == specificValue
+    case .notSpecific(let specificValue):
+        success = returnValue != specificValue
     }
 
     if !success {
