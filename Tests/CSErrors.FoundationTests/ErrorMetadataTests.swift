@@ -7,6 +7,7 @@
 
 @testable import CSErrors
 import CSErrors_Foundation
+import CwlPreconditionTesting
 import System
 import XCTest
 
@@ -183,9 +184,11 @@ class ErrorMetadataTests: XCTestCase {
         let pathMetadata = ErrorMetadata(path: FilePath("/usr/bin/something"))
 
         emulateMacOSVersion(10) {
-            let failMessage = allowFailure { _ = pathMetadata.pathString }
+            let e = catchBadInstruction {
+                _ = pathMetadata.pathString
+            }
 
-            XCTAssertEqual(failMessage, "Should not be reached")
+            XCTAssertNotNil(e)
         }
     }
 }

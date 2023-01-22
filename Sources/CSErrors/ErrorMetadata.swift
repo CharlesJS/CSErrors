@@ -37,13 +37,15 @@ public struct ErrorMetadata {
         var string: String {
             switch self {
             case .path(let path):
-                if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, macCatalyst 15.0, *), versionCheck(12) {
-                    return (path as! FilePath).string
-                } else if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11) {
-                    return String(decoding: path as! FilePath)
-                } else {
-                    return fail("Should not be reached")
+                guard #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11) else {
+                    preconditionFailure("Should not be reached")
                 }
+
+                guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, macCatalyst 15.0, *), versionCheck(12) else {
+                    return String(decoding: path as! FilePath)
+                }
+
+                return (path as! FilePath).string
             case .string(let string):
                 return string
             }
