@@ -36,16 +36,16 @@ public func errno(_ code: Int32 = Foundation.errno, url: URL?, isWrite: Bool = f
     return err
 }
 
-public func callPOSIXFunction(
-    expect expectedReturn: POSIXReturnExpectation,
+public func callPOSIXFunction<I: BinaryInteger>(
+    expect expectedReturn: POSIXReturnExpectation<I>,
     errorFrom errorReturn: POSIXErrorReturn = .globalErrno,
     url: URL,
     isWrite: Bool = false,
-    closure: () -> Int32
+    closure: () -> I
 ) throws {
     let (err, isError) = _callPOSIXFunction(expect: expectedReturn, errorFrom: errorReturn, closure: closure)
     if isError {
-        throw errno(err, url: url, isWrite: isWrite)
+        throw errno(Int32(err), url: url, isWrite: isWrite)
     }
 }
 

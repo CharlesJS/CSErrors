@@ -91,11 +91,11 @@ public func errno(_ code: Int32? = nil, path: String? = nil, isWrite: Bool = fal
     return System.Errno(rawValue: code)
 }
 
-public enum POSIXReturnExpectation {
+public enum POSIXReturnExpectation<I: BinaryInteger> {
     case zero
     case nonNegative
-    case specific(Int32)
-    case notSpecific(Int32)
+    case specific(I)
+    case notSpecific(I)
 }
 
 public enum POSIXErrorReturn {
@@ -106,7 +106,7 @@ public enum POSIXErrorReturn {
 @discardableResult
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
 public func callPOSIXFunction<I: BinaryInteger>(
-    expect: POSIXReturnExpectation,
+    expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn = .globalErrno,
     path: FilePath,
     isWrite: Bool = false,
@@ -123,7 +123,7 @@ public func callPOSIXFunction<I: BinaryInteger>(
 
 @discardableResult
 public func callPOSIXFunction<I: BinaryInteger>(
-    expect: POSIXReturnExpectation,
+    expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn = .globalErrno,
     path: String? = nil,
     isWrite: Bool = false,
@@ -139,12 +139,12 @@ public func callPOSIXFunction<I: BinaryInteger>(
 }
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
-public func callPOSIXFunction<T>(
-    expect: POSIXReturnExpectation,
+public func callPOSIXFunction<T, I: BinaryInteger>(
+    expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn = .globalErrno,
     path: FilePath,
     isWrite: Bool = false,
-    closure: (UnsafeMutablePointer<T>) -> some BinaryInteger
+    closure: (UnsafeMutablePointer<T>) -> I
 ) throws -> T {
     switch _callPOSIXFunction(expect: expect, errorFrom: errorFrom, closure: closure) {
     case .success(let returnValue):
@@ -154,12 +154,12 @@ public func callPOSIXFunction<T>(
     }
 }
 
-public func callPOSIXFunction<T>(
-    expect: POSIXReturnExpectation,
+public func callPOSIXFunction<T, I: BinaryInteger>(
+    expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn = .globalErrno,
     path: String? = nil,
     isWrite: Bool = false,
-    closure: (UnsafeMutablePointer<T>) -> some BinaryInteger
+    closure: (UnsafeMutablePointer<T>) -> I
 ) throws -> T {
     switch _callPOSIXFunction(expect: expect, errorFrom: errorFrom, closure: closure) {
     case .success(let returnValue):
@@ -170,7 +170,7 @@ public func callPOSIXFunction<T>(
 }
 
 @_spi(CSErrorsInternal) public func _callPOSIXFunction<I: BinaryInteger>(
-    expect: POSIXReturnExpectation,
+    expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn,
     closure: () -> I
 ) -> (I, Bool) {
@@ -205,10 +205,10 @@ private enum PointerReturn<T> {
     case success(T)
     case failure(Int32)
 }
-private func _callPOSIXFunction<T>(
-    expect: POSIXReturnExpectation,
+private func _callPOSIXFunction<T, I: BinaryInteger>(
+    expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn,
-    closure: (UnsafeMutablePointer<T>) -> some BinaryInteger
+    closure: (UnsafeMutablePointer<T>) -> I
 ) -> PointerReturn<T> {
     let returnPointer = UnsafeMutablePointer<T>.allocate(capacity: 1)
     defer { returnPointer.deallocate() }
