@@ -169,6 +169,20 @@ public func callPOSIXFunction<T, I: BinaryInteger>(
     }
 }
 
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
+public func callPOSIXFunction<T>(path: FilePath, closure: () -> UnsafeMutablePointer<T>?) throws -> UnsafeMutablePointer<T> {
+    guard let pointer = closure() else { throw errno(path: path) }
+    return pointer
+}
+
+public func callPOSIXFunction<T>(
+    path: String? = nil,
+    closure: () -> UnsafeMutablePointer<T>?
+) throws -> UnsafeMutablePointer<T> {
+    guard let pointer = closure() else { throw errno(path: path) }
+    return pointer
+}
+
 @_spi(CSErrorsInternal) public func _callPOSIXFunction<I: BinaryInteger>(
     expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn,

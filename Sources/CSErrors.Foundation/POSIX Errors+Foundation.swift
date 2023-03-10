@@ -49,6 +49,10 @@ public func callPOSIXFunction<I: BinaryInteger>(
     }
 }
 
+public func callPOSIXFunction<T>(url: URL, closure: () -> UnsafeMutablePointer<T>?) throws -> UnsafeMutablePointer<T> {
+    try callPOSIXFunction(path: url.path, closure: closure)
+}
+
 private func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
     switch posixCode {
     case EPERM, EACCES:

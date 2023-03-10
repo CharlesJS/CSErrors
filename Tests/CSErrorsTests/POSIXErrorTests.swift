@@ -249,6 +249,44 @@ class POSIXErrorTests: XCTestCase {
         }
     }
 
+    func testDirectPointerReturn() throws {
+        let tempURL = FileManager.default.temporaryDirectory
+        let tempFileName = UUID().uuidString
+        let tempFileURL = tempURL.appending(path: tempFileName)
+
+        try Data().write(to: tempFileURL)
+        defer { _ = try? FileManager.default.removeItem(at: tempFileURL) }
+
+        func checkDir(_ dir: UnsafeMutablePointer<DIR>) -> Bool {
+            defer { closedir(dir) }
+            var foundIt = false
+
+            while let entry = readdir(dir) {
+                var nameBytes = entry.pointee.d_name
+                let name = withUnsafePointer(to: &nameBytes) {
+                    String(data: Data(bytes: $0, count: Int(entry.pointee.d_namlen)), encoding: .utf8)
+                }
+
+                if name == tempFileName {
+                    foundIt = true
+                }
+            }
+
+            return foundIt
+        }
+
+        XCTAssertTrue(checkDir(try callPOSIXFunction(path: tempURL.path) { opendir(tempURL.path) }))
+        XCTAssertTrue(checkDir(try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempURL.path) }))
+
+        XCTAssertThrowsError(try callPOSIXFunction(path: tempURL.path) { opendir(tempFileURL.path) }) {
+            XCTAssertEqual($0 as? Errno, .notDirectory)
+        }
+
+        XCTAssertThrowsError(try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempFileURL.path) }) {
+            XCTAssertEqual($0 as? Errno, .notDirectory)
+        }
+    }
+
     func testDirectErrorReturn() {
         var attr: posix_spawnattr_t? = nil
 

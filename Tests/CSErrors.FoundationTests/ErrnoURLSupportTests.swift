@@ -79,12 +79,16 @@ class ErrnoURLSupportTests: XCTestCase {
         try "Testing 1 2 3".write(to: url, atomically: true, encoding: .utf8)
         XCTAssertNoThrow(try callPOSIXFunction(expect: .zero, url: url, isWrite: true) { unlink(url.path) })
 
-        var err: Error? = nil
-        XCTAssertThrowsError(try callPOSIXFunction(expect: .zero, url: url, isWrite: true) { unlink(url.path) }) { err = $0 }
+        XCTAssertThrowsError(try callPOSIXFunction(expect: .zero, url: url, isWrite: true) { unlink(url.path) }) {
+            XCTAssertEqual(($0 as? CocoaError)?.code, .fileNoSuchFile)
+            XCTAssertEqual(($0 as? CocoaError)?.userInfo[NSURLErrorKey] as? URL, url)
+            XCTAssertEqual(($0 as? CocoaError)?.userInfo[NSFilePathErrorKey] as? String, url.path)
+        }
 
-        let cocoaErr = try XCTUnwrap(err as? CocoaError)
-        XCTAssertEqual(cocoaErr.code, .fileNoSuchFile)
-        XCTAssertEqual(cocoaErr.userInfo[NSURLErrorKey] as? URL, url)
-        XCTAssertEqual(cocoaErr.userInfo[NSFilePathErrorKey] as? String, url.path)
+        XCTAssertThrowsError(try callPOSIXFunction(url: url) { opendir(url.path) }) {
+            XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
+            XCTAssertEqual(($0 as? CocoaError)?.userInfo[NSURLErrorKey] as? URL, url)
+            XCTAssertEqual(($0 as? CocoaError)?.userInfo[NSFilePathErrorKey] as? String, url.path)
+        }
     }
 }
