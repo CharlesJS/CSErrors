@@ -22,7 +22,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0"))
+        .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0")),
     ],
     targets: [
         .target(
