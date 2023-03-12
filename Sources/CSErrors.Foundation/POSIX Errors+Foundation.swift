@@ -49,7 +49,25 @@ public func callPOSIXFunction<I: BinaryInteger>(
     }
 }
 
+public func callPOSIXFunction<T, I: BinaryInteger>(
+    expect: POSIXReturnExpectation<I>,
+    errorFrom: POSIXErrorReturn = .globalErrno,
+    url: URL,
+    isWrite: Bool = false,
+    closure: (UnsafeMutablePointer<T>) -> I
+) throws -> T {
+    try callPOSIXFunction(expect: expect, errorFrom: errorFrom, path: url.path, isWrite: isWrite, closure: closure)
+}
+
 public func callPOSIXFunction<T>(url: URL, closure: () -> UnsafeMutablePointer<T>?) throws -> UnsafeMutablePointer<T> {
+    try callPOSIXFunction(path: url.path, closure: closure)
+}
+
+public func callPOSIXFunction(url: URL, closure: () -> UnsafeMutableRawPointer?) throws -> UnsafeMutableRawPointer {
+    try callPOSIXFunction(path: url.path, closure: closure)
+}
+
+public func callPOSIXFunction(url: URL, closure: () -> OpaquePointer?) throws -> OpaquePointer {
     try callPOSIXFunction(path: url.path, closure: closure)
 }
 

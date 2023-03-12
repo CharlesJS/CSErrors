@@ -285,6 +285,43 @@ class POSIXErrorTests: XCTestCase {
         XCTAssertThrowsError(try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempFileURL.path) }) {
             XCTAssertEqual($0 as? Errno, .notDirectory)
         }
+
+        XCTAssertThrowsError(try callPOSIXFunction(path: "/tmp") { acl_init(-1) }) {
+            XCTAssertEqual($0 as? Errno, .invalidArgument)
+        }
+
+        XCTAssertThrowsError(try callPOSIXFunction(path: FilePath("/tmp")) { acl_init(-1) }) {
+            XCTAssertEqual($0 as? Errno, .invalidArgument)
+        }
+
+        let acl: acl_t = try callPOSIXFunction(path: "/tmp") { acl_init(0) }
+        defer { acl_free(UnsafeMutableRawPointer(acl)) }
+
+        let acl2: acl_t = try callPOSIXFunction(path: FilePath("/tmp")) { acl_init(0) }
+        defer { acl_free(UnsafeMutableRawPointer(acl2)) }
+
+        var optionalACL: acl_t? = acl
+
+        let aclEntry = try callPOSIXFunction(expect: .zero) { acl_create_entry(&optionalACL, $0) }
+
+        XCTAssertThrowsError(try callPOSIXFunction(path: "/tmp") { acl_get_qualifier(aclEntry) }) {
+            XCTAssertEqual($0 as? Errno, .invalidArgument)
+        }
+
+        XCTAssertThrowsError(try callPOSIXFunction(path: FilePath("/tmp")) { acl_get_qualifier(aclEntry) }) {
+            XCTAssertEqual($0 as? Errno, .invalidArgument)
+        }
+
+        try callPOSIXFunction(expect: .zero) { acl_set_tag_type(aclEntry, ACL_EXTENDED_ALLOW) }
+
+        let qualifier = try callPOSIXFunction(path: "/tmp") { acl_get_qualifier(aclEntry) }
+        defer { acl_free(qualifier) }
+
+        let qualifier2 = try callPOSIXFunction(path: FilePath("/tmp")) { acl_get_qualifier(aclEntry) }
+        defer { acl_free(qualifier2) }
+
+        XCTAssertNotNil(qualifier)
+        XCTAssertNotNil(qualifier2)
     }
 
     func testDirectErrorReturn() {

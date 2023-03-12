@@ -90,5 +90,27 @@ class ErrnoURLSupportTests: XCTestCase {
             XCTAssertEqual(($0 as? CocoaError)?.userInfo[NSURLErrorKey] as? URL, url)
             XCTAssertEqual(($0 as? CocoaError)?.userInfo[NSFilePathErrorKey] as? String, url.path)
         }
+
+        XCTAssertThrowsError(try callPOSIXFunction(url: url) { acl_init(-1) }) {
+            XCTAssertEqual($0 as? Errno, .invalidArgument)
+        }
+
+        let acl: acl_t = try callPOSIXFunction(url: url) { acl_init(0) }
+        defer { acl_free(UnsafeMutableRawPointer(acl)) }
+
+        var optionalACL: acl_t? = acl
+
+        let aclEntry = try callPOSIXFunction(expect: .zero, url: url) { acl_create_entry(&optionalACL, $0) }
+
+        XCTAssertThrowsError(try callPOSIXFunction(url: url) { acl_get_qualifier(aclEntry) }) {
+            XCTAssertEqual($0 as? Errno, .invalidArgument)
+        }
+
+        try callPOSIXFunction(expect: .zero, url: url) { acl_set_tag_type(aclEntry, ACL_EXTENDED_ALLOW) }
+
+        let qualifier = try callPOSIXFunction(url: url) { acl_get_qualifier(aclEntry) }
+        defer { acl_free(qualifier) }
+
+        XCTAssertNotNil(qualifier)
     }
 }
