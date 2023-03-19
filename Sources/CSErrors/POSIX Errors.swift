@@ -170,41 +170,55 @@ public func callPOSIXFunction<T, I: BinaryInteger>(
 }
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
-public func callPOSIXFunction<T>(path: FilePath, closure: () -> UnsafeMutablePointer<T>?) throws -> UnsafeMutablePointer<T> {
-    guard let pointer = closure() else { throw errno(path: path) }
+public func callPOSIXFunction<T>(
+    path: FilePath,
+    isWrite: Bool = false,
+    closure: () -> UnsafeMutablePointer<T>?
+) throws -> UnsafeMutablePointer<T> {
+    guard let pointer = closure() else { throw errno(path: path, isWrite: isWrite) }
     return pointer
 }
 
 public func callPOSIXFunction<T>(
     path: String? = nil,
+    isWrite: Bool = false,
     closure: () -> UnsafeMutablePointer<T>?
 ) throws -> UnsafeMutablePointer<T> {
-    guard let pointer = closure() else { throw errno(path: path) }
+    guard let pointer = closure() else { throw errno(path: path, isWrite: isWrite) }
     return pointer
 }
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
-public func callPOSIXFunction(path: FilePath, closure: () -> UnsafeMutableRawPointer?) throws -> UnsafeMutableRawPointer {
-    guard let pointer = closure() else { throw errno(path: path) }
+public func callPOSIXFunction(
+    path: FilePath,
+    isWrite: Bool = false,
+    closure: () -> UnsafeMutableRawPointer?
+) throws -> UnsafeMutableRawPointer {
+    guard let pointer = closure() else { throw errno(path: path, isWrite: isWrite) }
     return pointer
 }
 
 public func callPOSIXFunction(
     path: String? = nil,
+    isWrite: Bool = false,
     closure: () -> UnsafeMutableRawPointer?
 ) throws -> UnsafeMutableRawPointer {
-    guard let pointer = closure() else { throw errno(path: path) }
+    guard let pointer = closure() else { throw errno(path: path, isWrite: isWrite) }
     return pointer
 }
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
-public func callPOSIXFunction(path: FilePath, closure: () -> OpaquePointer?) throws -> OpaquePointer {
-    guard let pointer = closure() else { throw errno(path: path) }
+public func callPOSIXFunction(path: FilePath, isWrite: Bool = false, closure: () -> OpaquePointer?) throws -> OpaquePointer {
+    guard let pointer = closure() else { throw errno(path: path, isWrite: isWrite) }
     return pointer
 }
 
-public func callPOSIXFunction(path: String? = nil, closure: () -> OpaquePointer?) throws -> OpaquePointer {
-    guard let pointer = closure() else { throw errno(path: path) }
+public func callPOSIXFunction(
+    path: String? = nil,
+    isWrite: Bool = false,
+    closure: () -> OpaquePointer?
+) throws -> OpaquePointer {
+    guard let pointer = closure() else { throw errno(path: path, isWrite: isWrite) }
     return pointer
 }
 
