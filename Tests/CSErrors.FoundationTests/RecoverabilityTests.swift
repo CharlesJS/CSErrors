@@ -118,7 +118,7 @@ class RecoverabilityTests: XCTestCase {
             expectation.fulfill()
         }
 
-        await self.waitForExpectations(timeout: 10)
+        await self.fulfillment(of: [expectation], timeout: 10)
 
         let syncCount = await callCounts.sync
         let asyncCount = await callCounts.async

@@ -6,12 +6,12 @@
 //
 
 import Foundation
-@_spi(CSErrorsInternal) import CSErrors
+import CSErrors
 
 extension HTTPError: LocalizedError {}
 
-@_spi(CSErrorsInternal) extension HTTPError: _CSErrorsHTTPErrorInternal {
-    public var statusCodeString: String {
+extension HTTPError: _CSErrorsHTTPErrorInternal {
+    package var statusCodeString: String {
         HTTPURLResponse.localizedString(forStatusCode: self.statusCode)
     }
 }

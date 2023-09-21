@@ -15,9 +15,9 @@ func emulateMacOSVersion(_ vers: Int, closure: () throws -> ()) rethrows {
 }
 
 private var emulatedVersion = Int.max
-@_spi(CSErrorsInternal) public func versionCheck(_ vers: Int) -> Bool { emulatedVersion >= vers }
+package func versionCheck(_ vers: Int) -> Bool { emulatedVersion >= vers }
 #else
-@inline(__always) @_spi(CSErrorsInternal) public func versionCheck(_ vers: Int) -> Bool { true }
+@inline(__always) package func versionCheck(_ vers: Int) -> Bool { true }
 #endif
 
 internal let cocoaErrorDomain = "NSCocoaErrorDomain"

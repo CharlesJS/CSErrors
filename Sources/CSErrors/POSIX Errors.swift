@@ -222,7 +222,7 @@ public func callPOSIXFunction(
     return pointer
 }
 
-@_spi(CSErrorsInternal) public func _callPOSIXFunction<I: BinaryInteger>(
+package func _callPOSIXFunction<I: BinaryInteger>(
     expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn,
     closure: () -> I
@@ -277,10 +277,10 @@ private func _callPOSIXFunction<T, I: BinaryInteger>(
     return .success(returnPointer.pointee)
 }
 
-@_spi(CSErrorsInternal) public struct POSIXConnector {}
+package struct POSIXConnector {}
 private let posixConnector = POSIXConnector()
 
-@_spi(CSErrorsInternal) public protocol _CSErrorsPOSIXErrorInternal {
+package protocol _CSErrorsPOSIXErrorInternal {
     @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
     func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> any Error
 

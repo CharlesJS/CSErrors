@@ -7,7 +7,7 @@
 
 import Foundation
 import System
-@_spi(CSErrorsInternal) import CSErrors
+import CSErrors
 
 public func errno(_ code: Int32 = Foundation.errno, url: URL?, isWrite: Bool = false) -> any Error {
     if code == 0 {
@@ -94,9 +94,9 @@ private func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
     }
 }
 
-@_spi(CSErrorsInternal) extension POSIXConnector: _CSErrorsPOSIXErrorInternal {
+extension POSIXConnector: _CSErrorsPOSIXErrorInternal {
     @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
-    public func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> any Error {
+    package func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> any Error {
         guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, macCatalyst 15.0, *), versionCheck(12) else {
             return self.translateErrno(code, path: String(decoding: path), isWrite: isWrite)
         }
@@ -108,7 +108,7 @@ private func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
         return errno(code, url: URL(filePath: path), isWrite: isWrite)
     }
 
-    public func translateErrno(_ code: Int32, path: String?, isWrite: Bool) -> any Error {
+    package func translateErrno(_ code: Int32, path: String?, isWrite: Bool) -> any Error {
         let url: URL?
 
         if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.0, *), versionCheck(13) {

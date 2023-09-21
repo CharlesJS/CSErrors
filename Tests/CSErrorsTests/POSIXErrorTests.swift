@@ -7,7 +7,7 @@
 
 import System
 import XCTest
-@_spi(CSErrorsInternal) @testable import CSErrors
+@testable import CSErrors
 
 @available(macOS 13.0, *)
 class POSIXErrorTests: XCTestCase {

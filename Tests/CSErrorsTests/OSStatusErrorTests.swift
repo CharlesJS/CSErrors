@@ -7,7 +7,7 @@
 
 import System
 import XCTest
-@_spi(CSErrorsInternal) @testable import CSErrors
+@testable import CSErrors
 
 class OSStatusErrorTests: XCTestCase {
 #if canImport(Darwin)

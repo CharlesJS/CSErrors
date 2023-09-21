@@ -24,6 +24,6 @@ public struct HTTPError: CSErrorProtocol {
     public var _code: Int { self.statusCode }
 }
 
-@_spi(CSErrorsInternal) public protocol _CSErrorsHTTPErrorInternal {
+package protocol _CSErrorsHTTPErrorInternal {
     var statusCodeString: String { get }
 }

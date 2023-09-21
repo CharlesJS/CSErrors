@@ -72,7 +72,7 @@ public struct OSStatusError: Error {
     public var _domain: String { Self.osStatusErrorDomain }
     public var _code: Int { Int(self.rawValue) }
 
-    @_spi(CSErrorsInternal) public init(rawValue: OSStatus, metadata _metadata: ErrorMetadata = ErrorMetadata()) {
+    package init(rawValue: OSStatus, metadata _metadata: ErrorMetadata = ErrorMetadata()) {
         var metadata = _metadata
 
         if let reason = (OSStatusError.self as? _CSErrorsOSStatusInternal.Type)?.getFailureReason(rawValue) {
@@ -335,7 +335,7 @@ public func callOSStatusAPI<T>(
     return ret
 }
 
-@_spi(CSErrorsInternal) public protocol _CSErrorsOSStatusInternal {
+package protocol _CSErrorsOSStatusInternal {
     static func getFailureReason(_ osStatus: OSStatus) -> String?
 }
 

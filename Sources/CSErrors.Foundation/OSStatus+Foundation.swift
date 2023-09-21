@@ -6,7 +6,7 @@
 //
 
 import Foundation
-@_spi(CSErrorsInternal) import CSErrors
+import CSErrors
 
 #if canImport(Darwin)
 import Darwin
@@ -141,8 +141,8 @@ public func callOSStatusAPI<T>(
     return ret
 }
 
-@_spi(CSErrorsInternal) extension OSStatusError: _CSErrorsOSStatusInternal {
-    public static func getFailureReason(_ osStatus: OSStatus) -> String? {
+extension OSStatusError: _CSErrorsOSStatusInternal {
+    package static func getFailureReason(_ osStatus: OSStatus) -> String? {
         SecCopyErrorMessageString(osStatus, nil) as String?
     }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 import System
-@_spi(CSErrorsInternal) import CSErrors
+import CSErrors
 
 extension ErrorMetadata {
     /// Create an `ErrorMetadata` representing metadata for an error.
