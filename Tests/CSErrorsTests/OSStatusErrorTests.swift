@@ -192,15 +192,6 @@ class OSStatusErrorTests: XCTestCase {
 
         XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorENOENT).isFileNotFoundError)
         XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEINVAL).isFileNotFoundError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: fnfErr).isFileNotFoundError)
-        XCTAssertFalse(NSError(domain: NSOSStatusErrorDomain, code: ioErr).isFileNotFoundError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kENOENTErr).isFileNotFoundError)
-        XCTAssertFalse(NSError(domain: NSOSStatusErrorDomain, code: kEINVALErr).isFileNotFoundError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorENOENT).isFileNotFoundError)
-        XCTAssertFalse(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorEINVAL).isFileNotFoundError)
     }
 
     func testPermissionError() {
@@ -230,15 +221,6 @@ class OSStatusErrorTests: XCTestCase {
 
         XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kEACCESErr).isPermissionError)
         XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kEPERMErr).isPermissionError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: afpAccessDenied).isPermissionError)
-        XCTAssertFalse(NSError(domain: NSOSStatusErrorDomain, code: fnfErr).isPermissionError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorEACCES).isPermissionError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorEPERM).isPermissionError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kEACCESErr).isPermissionError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kEPERMErr).isPermissionError)
     }
 
     func testCancelledError() {
@@ -278,20 +260,6 @@ class OSStatusErrorTests: XCTestCase {
         XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kFBCsummarizationCanceled).isCancelledError)
         XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorECANCELED).isCancelledError)
         XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: badFolderDescErr).isCancelledError)
-
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: userCanceledErr).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: errAEWaitCanceled).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kernelCanceledErr).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kOTCanceledErr).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kECANCELErr).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: errIACanceled).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kRAConnectionCanceled).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kTXNUserCanceledOperationErr).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kFBCindexingCanceled).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kFBCaccessCanceled).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kFBCsummarizationCanceled).isCancelledError)
-        XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorECANCELED).isCancelledError)
-        XCTAssertFalse(NSError(domain: NSOSStatusErrorDomain, code: badFolderDescErr).isCancelledError)
     }
 #endif
 }

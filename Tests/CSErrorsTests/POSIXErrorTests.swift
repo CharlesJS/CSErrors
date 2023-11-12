@@ -29,9 +29,6 @@ class POSIXErrorTests: XCTestCase {
         XCTAssertTrue(POSIXError(.ENOENT).isFileNotFoundError)
         XCTAssertFalse(POSIXError(.EINVAL).isFileNotFoundError)
 
-        XCTAssertTrue(NSError(domain: NSPOSIXErrorDomain, code: Int(ENOENT)).isFileNotFoundError)
-        XCTAssertFalse(NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)).isFileNotFoundError)
-
         XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isFileNotFoundError)
         XCTAssertFalse(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isFileNotFoundError)
     }
@@ -45,10 +42,6 @@ class POSIXErrorTests: XCTestCase {
         XCTAssertTrue(POSIXError(.EPERM).isPermissionError)
         XCTAssertFalse(POSIXError(.ENOENT).isPermissionError)
 
-        XCTAssertTrue(NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES)).isPermissionError)
-        XCTAssertTrue(NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM)).isPermissionError)
-        XCTAssertFalse(NSError(domain: NSPOSIXErrorDomain, code: Int(ENOENT)).isPermissionError)
-
         XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EACCES)).isPermissionError)
         XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EPERM)).isPermissionError)
         XCTAssertFalse(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isPermissionError)
@@ -60,9 +53,6 @@ class POSIXErrorTests: XCTestCase {
 
         XCTAssertTrue(POSIXError(.ECANCELED).isCancelledError)
         XCTAssertFalse(POSIXError(.EINVAL).isCancelledError)
-
-        XCTAssertTrue(NSError(domain: NSPOSIXErrorDomain, code: Int(ECANCELED)).isCancelledError)
-        XCTAssertFalse(NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)).isCancelledError)
 
         XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ECANCELED)).isCancelledError)
         XCTAssertFalse(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isCancelledError)

@@ -22,6 +22,10 @@ package func versionCheck(_ vers: Int) -> Bool { emulatedVersion >= vers }
 
 internal let cocoaErrorDomain = "NSCocoaErrorDomain"
 
+package protocol CSNSErrorProtocol {
+    func toCSErrorProtocol() -> (any CSErrorProtocol)?
+}
+
 internal struct GenericError: Error {
     static func unknownError(isWrite: Bool) -> GenericError {
         GenericError(_domain: cocoaErrorDomain, _code: isWrite ? 512 : 256)
@@ -29,4 +33,7 @@ internal struct GenericError: Error {
 
     let _domain: String
     let _code: Int
+
+    var domain: String { self._domain }
+    var code: Int { self._code }
 }

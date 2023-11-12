@@ -36,7 +36,11 @@ extension Error {
         if let err = self as? any CSErrorProtocol, err.isFileNotFoundError {
             return true
         }
-
+        
+        if let err = (self as? any CSNSErrorProtocol)?.toCSErrorProtocol(), err.isFileNotFoundError {
+            return true
+        }
+        
         return false
     }
 
@@ -62,6 +66,10 @@ extension Error {
             return true
         }
 
+        if let err = (self as? any CSNSErrorProtocol)?.toCSErrorProtocol(), err.isPermissionError {
+            return true
+        }
+
         return false
     }
 
@@ -84,6 +92,10 @@ extension Error {
 #endif
 
         if let err = self as? any CSErrorProtocol, err.isCancelledError {
+            return true
+        }
+
+        if let err = (self as? any CSNSErrorProtocol)?.toCSErrorProtocol(), err.isCancelledError {
             return true
         }
 
