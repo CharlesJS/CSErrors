@@ -14,13 +14,13 @@ class OSStatusErrorTests: XCTestCase {
     private struct SomeOtherError: Error {}
 
     private func checkOSStatusError<E: Error>(_ code: some BinaryInteger, error: E) {
-        func funcThatSucceeds() -> OSStatus { noErr }
+        func funcThatSucceeds() -> OSStatus { 0 }
         func funcThatFails() -> OSStatus { OSStatus(code) }
-        func takesPointerAndSucceeds(_ ptr: UnsafeMutablePointer<Int>) -> OSStatus { ptr.pointee = 1; return noErr }
+        func takesPointerAndSucceeds(_ ptr: UnsafeMutablePointer<Int>) -> OSStatus { ptr.pointee = 1; return 0 }
         func takesPointerAndFails(_: UnsafeMutablePointer<Int>) -> OSStatus { OSStatus(code) }
-        func optionalPointerSucceeds(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = 2; return noErr }
+        func optionalPointerSucceeds(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = 2; return 0 }
         func optionalPointerFails(_: UnsafeMutablePointer<Int?>) -> OSStatus { OSStatus(code) }
-        func setsPointerToNil(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = nil; return noErr }
+        func setsPointerToNil(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = nil; return 0 }
 
         func compareErrors(_ e1: any Error, _ e2: any Error) {
             XCTAssertTrue(type(of: e1) == type(of: e2), "\(type(of: e1)) is not same type as \(type(of: e2))")
@@ -29,7 +29,7 @@ class OSStatusErrorTests: XCTestCase {
 
         func assertUnknownError(_ e: any Error) {
             XCTAssertTrue(e is OSStatusError)
-            XCTAssertEqual((e as? OSStatusError)?.rawValue, OSStatus(coreFoundationUnknownErr))
+            XCTAssertEqual((e as? OSStatusError)?.rawValue, OSStatus(OSStatusError.Codes.coreFoundationUnknownErr))
         }
 
         compareErrors(error, osStatusError(OSStatus(code)))
@@ -175,23 +175,44 @@ class OSStatusErrorTests: XCTestCase {
             }
         }
 
-        checkFNFError(fnfErr, OSStatusError(rawValue: OSStatus(fnfErr)), true)
-        checkFNFError(ioErr, OSStatusError(rawValue: OSStatus(ioErr)), false)
+        checkFNFError(fnfErr, OSStatusError(rawValue: OSStatusError.Codes.fnfErr), true)
+        checkFNFError(ioErr, OSStatusError(rawValue: OSStatusError.Codes.ioErr), false)
 
-        checkFNFError(kENOENTErr, OSStatusError(rawValue: OSStatus(kENOENTErr)), true)
-        checkFNFError(kEINVALErr, OSStatusError(rawValue: OSStatus(kEINVALErr)), false)
+        checkFNFError(kENOENTErr, OSStatusError(rawValue: OSStatusError.Codes.kENOENTErr), true)
+        checkFNFError(kEINVALErr, OSStatusError(rawValue: OSStatusError.Codes.kEINVALErr), false)
 
         checkFNFError(kPOSIXErrorENOENT, Errno.noSuchFileOrDirectory, true)
         checkFNFError(kPOSIXErrorEINVAL, Errno.invalidArgument, false)
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: fnfErr).isFileNotFoundError)
-        XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: ioErr).isFileNotFoundError)
+        XCTAssertTrue(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.fnfErr)).isFileNotFoundError
+        )
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kENOENTErr).isFileNotFoundError)
-        XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: kEINVALErr).isFileNotFoundError)
+        XCTAssertFalse(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.ioErr)).isFileNotFoundError
+        )
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorENOENT).isFileNotFoundError)
-        XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEINVAL).isFileNotFoundError)
+        XCTAssertTrue(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.kENOENTErr)).isFileNotFoundError
+        )
+
+        XCTAssertFalse(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.kEINVALErr)).isFileNotFoundError
+        )
+
+        XCTAssertTrue(
+            GenericError(
+                _domain: NSOSStatusErrorDomain,
+                _code: Int(OSStatusError.Codes.kPOSIXErrorBase + ENOENT)
+            ).isFileNotFoundError
+        )
+
+        XCTAssertFalse(
+            GenericError(
+                _domain: NSOSStatusErrorDomain,
+                _code: Int(OSStatusError.Codes.kPOSIXErrorBase + EINVAL)
+            ).isFileNotFoundError
+        )
     }
 
     func testPermissionError() {
@@ -213,14 +234,35 @@ class OSStatusErrorTests: XCTestCase {
         checkPermError(kEACCESErr, OSStatusError(rawValue: OSStatus(kEACCESErr)), true)
         checkPermError(kEPERMErr, OSStatusError(rawValue: OSStatus(kEPERMErr)), true)
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: afpAccessDenied).isPermissionError)
-        XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: fnfErr).isPermissionError)
+        XCTAssertTrue(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.afpAccessDenied)).isPermissionError
+        )
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEACCES).isPermissionError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEPERM).isPermissionError)
+        XCTAssertFalse(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.fnfErr)).isPermissionError
+        )
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kEACCESErr).isPermissionError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kEPERMErr).isPermissionError)
+        XCTAssertTrue(
+            GenericError(
+                _domain: NSOSStatusErrorDomain,
+                _code: Int(OSStatusError.Codes.kPOSIXErrorBase + EACCES)
+            ).isPermissionError
+        )
+
+        XCTAssertTrue(
+            GenericError(
+                _domain: NSOSStatusErrorDomain,
+                _code: Int(OSStatusError.Codes.kPOSIXErrorBase + EPERM)
+            ).isPermissionError
+        )
+
+        XCTAssertTrue(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.kEACCESErr)).isPermissionError
+        )
+
+        XCTAssertTrue(
+            GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.kEPERMErr)).isPermissionError
+        )
     }
 
     func testCancelledError() {
@@ -233,33 +275,34 @@ class OSStatusErrorTests: XCTestCase {
             }
         }
 
-        checkCancelError(userCanceledErr, OSStatusError(rawValue: OSStatus(userCanceledErr)), true)
-        checkCancelError(errAEWaitCanceled, OSStatusError(rawValue: OSStatus(errAEWaitCanceled)), true)
-        checkCancelError(kernelCanceledErr, OSStatusError(rawValue: OSStatus(kernelCanceledErr)), true)
-        checkCancelError(kOTCanceledErr, OSStatusError(rawValue: OSStatus(kOTCanceledErr)), true)
-        checkCancelError(kECANCELErr, OSStatusError(rawValue: OSStatus(kECANCELErr)), true)
-        checkCancelError(errIACanceled, OSStatusError(rawValue: OSStatus(errIACanceled)), true)
-        checkCancelError(kRAConnectionCanceled, OSStatusError(rawValue: OSStatus(kRAConnectionCanceled)), true)
-        checkCancelError(kTXNUserCanceledOperationErr, OSStatusError(rawValue: OSStatus(kTXNUserCanceledOperationErr)), true)
-        checkCancelError(kFBCindexingCanceled, OSStatusError(rawValue: OSStatus(kFBCindexingCanceled)), true)
-        checkCancelError(kFBCaccessCanceled, OSStatusError(rawValue: OSStatus(kFBCaccessCanceled)), true)
-        checkCancelError(kFBCsummarizationCanceled, OSStatusError(rawValue: OSStatus(kFBCsummarizationCanceled)), true)
-        checkCancelError(kPOSIXErrorECANCELED, Errno.canceled, true)
-        checkCancelError(badFolderDescErr, OSStatusError(rawValue: OSStatus(badFolderDescErr)), false)
+        for code in [
+            OSStatusError.Codes.userCanceledErr,
+            OSStatusError.Codes.errAEWaitCanceled,
+            OSStatusError.Codes.kernelCanceledErr,
+            OSStatusError.Codes.kOTCanceledErr,
+            OSStatusError.Codes.kECANCELErr,
+            OSStatusError.Codes.errIACanceled,
+            OSStatusError.Codes.kRAConnectionCanceled,
+            OSStatusError.Codes.kTXNUserCanceledOperationErr,
+            OSStatusError.Codes.kFBCindexingCanceled,
+            OSStatusError.Codes.kFBCaccessCanceled,
+            OSStatusError.Codes.kFBCsummarizationCanceled
+        ] {
+            checkCancelError(code, OSStatusError(rawValue: code), true)
+            XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: Int(code)).isCancelledError)
+        }
 
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: userCanceledErr).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: errAEWaitCanceled).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kernelCanceledErr).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kOTCanceledErr).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kECANCELErr).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: errIACanceled).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kRAConnectionCanceled).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kTXNUserCanceledOperationErr).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kFBCindexingCanceled).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kFBCaccessCanceled).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kFBCsummarizationCanceled).isCancelledError)
-        XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorECANCELED).isCancelledError)
-        XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: badFolderDescErr).isCancelledError)
+        checkCancelError(OSStatusError.Codes.kPOSIXErrorBase + ECANCELED, Errno.canceled, true)
+        checkCancelError(OSStatusError.Codes.ioErr, OSStatusError(rawValue: OSStatus(OSStatusError.Codes.ioErr)), false)
+
+        XCTAssertTrue(
+            GenericError(
+                _domain: NSOSStatusErrorDomain,
+                _code: Int(OSStatusError.Codes.kPOSIXErrorBase + ECANCELED)
+            ).isCancelledError
+        )
+
+        XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.ioErr)).isCancelledError)
     }
 #endif
 }

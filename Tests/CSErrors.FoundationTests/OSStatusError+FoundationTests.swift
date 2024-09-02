@@ -14,7 +14,7 @@ import XCTest
 class OSStatusErrorFoundationTests: XCTestCase {
 #if canImport(Darwin)
     func testCustomNSErrorConformance() throws {
-        let err = try XCTUnwrap(osStatusError(OSStatus(fnfErr), description: "Hello World") as? OSStatusError)
+        let err = try XCTUnwrap(osStatusError(OSStatusError.Codes.fnfErr, description: "Hello World") as? OSStatusError)
 
         XCTAssertEqual(OSStatusError.errorDomain, NSOSStatusErrorDomain)
         XCTAssertEqual(err.errorCode, fnfErr)
@@ -23,7 +23,7 @@ class OSStatusErrorFoundationTests: XCTestCase {
 
     func testUserInfoWithFilePath() {
         let err = osStatusError(
-            OSStatus(fnfErr),
+            OSStatusError.Codes.fnfErr,
             description: "desc",
             recoverySuggestion: "suggestion",
             recoveryOptions: ["one", "two", "three"],
@@ -34,7 +34,7 @@ class OSStatusErrorFoundationTests: XCTestCase {
             custom: ["foo" : "bar"]
         )
 
-        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatus(fnfErr))
+        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatusError.Codes.fnfErr)
 
         let userInfo = (err as NSError).userInfo
         XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "desc")
@@ -49,7 +49,7 @@ class OSStatusErrorFoundationTests: XCTestCase {
 
     func testUserInfoWithStringPath() {
         let err = osStatusError(
-            OSStatus(fnfErr),
+            OSStatusError.Codes.fnfErr,
             description: "desc",
             recoverySuggestion: "suggestion",
             recoveryOptions: ["one", "two", "three"],
@@ -60,7 +60,7 @@ class OSStatusErrorFoundationTests: XCTestCase {
             custom: ["foo" : "bar"]
         )
 
-        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatus(fnfErr))
+        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatusError.Codes.fnfErr)
 
         let userInfo = (err as NSError).userInfo
         XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "desc")
@@ -74,9 +74,13 @@ class OSStatusErrorFoundationTests: XCTestCase {
     }
 
     func testUserInfoWithURLAndStringEncoding() {
-        let err = osStatusError(OSStatus(eofErr), stringEncoding: .windowsCP1250, url: URL(filePath: "/path/to/file"))
+        let err = osStatusError(
+            OSStatusError.Codes.eofErr,
+            stringEncoding: .windowsCP1250,
+            url: URL(filePath: "/path/to/file")
+        )
 
-        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatus(eofErr))
+        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatusError.Codes.eofErr)
 
         let userInfo = (err as NSError).userInfo
         XCTAssertEqual(userInfo[NSStringEncodingErrorKey] as? UInt, String.Encoding.windowsCP1250.rawValue)
@@ -85,7 +89,7 @@ class OSStatusErrorFoundationTests: XCTestCase {
     }
 
     func testPOSIXTranslationWithURL() {
-        let err = osStatusError(OSStatus(kPOSIXErrorEAUTH), url: URL(filePath: "/path/to/file"))
+        let err = osStatusError(OSStatusError.Codes.kPOSIXErrorBase + EAUTH, url: URL(filePath: "/path/to/file"))
 
         XCTAssertEqual(err as? Errno, .authenticationError)
     }
@@ -99,7 +103,11 @@ class OSStatusErrorFoundationTests: XCTestCase {
             XCTAssertEqual(err.metadata.failureReason, failureReason)
         }
 
-        XCTAssertEqual(osStatusError(OSStatus(unimpErr)).localizedDescription, "Function or operation not implemented.")
+        XCTAssertEqual(
+            osStatusError(OSStatusError.Codes.unimpErr).localizedDescription,
+            "Function or operation not implemented."
+        )
+
         XCTAssertEqual(
             osStatusError(OSStatus(errSecDataTooLarge)).localizedDescription,
             "This item contains information which is too large or in a format that cannot be displayed."
@@ -116,13 +124,13 @@ class OSStatusErrorFoundationTests: XCTestCase {
             XCTAssertEqual(userInfo[NSFilePathErrorKey] as? String, url.path)
         }
 
-        func funcThatSucceeds() -> OSStatus { noErr }
-        func funcThatFails() -> OSStatus { OSStatus(fnfErr) }
-        func takesPointerAndSucceeds(_ ptr: UnsafeMutablePointer<Int>) -> OSStatus { ptr.pointee = 1; return noErr }
-        func takesPointerAndFails(_: UnsafeMutablePointer<Int>) -> OSStatus { OSStatus(fnfErr) }
-        func optionalPointerSucceeds(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = 2; return noErr }
-        func optionalPointerFails(_: UnsafeMutablePointer<Int?>) -> OSStatus { OSStatus(fnfErr) }
-        func setsPointerToNil(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = nil; return noErr }
+        func funcThatSucceeds() -> OSStatus { 0 }
+        func funcThatFails() -> OSStatus { OSStatusError.Codes.fnfErr }
+        func takesPointerAndSucceeds(_ ptr: UnsafeMutablePointer<Int>) -> OSStatus { ptr.pointee = 1; return 0 }
+        func takesPointerAndFails(_: UnsafeMutablePointer<Int>) -> OSStatus { OSStatusError.Codes.fnfErr }
+        func optionalPointerSucceeds(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = 2; return 0 }
+        func optionalPointerFails(_: UnsafeMutablePointer<Int?>) -> OSStatus { OSStatusError.Codes.fnfErr }
+        func setsPointerToNil(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = nil; return 0 }
 
         let url = URL(filePath: "/path/to/file")
 
@@ -146,7 +154,7 @@ class OSStatusErrorFoundationTests: XCTestCase {
             checkError($0, code: fnfErr, description: "desc", url: url)
         }
         XCTAssertThrowsError(try callOSStatusAPI(errorDescription: "desc", url: url) { setsPointerToNil($0) }) {
-            checkError($0, code: coreFoundationUnknownErr, description: "desc", url: url)
+            checkError($0, code: OSStatusError.Codes.coreFoundationUnknownErr, description: "desc", url: url)
         }
     }
 #endif

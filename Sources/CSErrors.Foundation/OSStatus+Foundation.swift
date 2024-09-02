@@ -131,7 +131,7 @@ public func callOSStatusAPI<T>(
 
     guard err == noErr, let ret = ret else {
         throw osStatusError(
-            err != noErr ? err : OSStatus(coreFoundationUnknownErr),
+            err != noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
             description: errorDescription,
             url: url,
             custom: customErrorUserInfo

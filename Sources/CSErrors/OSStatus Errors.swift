@@ -26,30 +26,34 @@ extension Error {
 }
 
 public struct OSStatusError: Error {
-    internal struct Codes {
+    package struct Codes {
         // Some OSStatus codes that we use elsewhere in this package.
-        static let kPOSIXErrorBase: Int32 = 100000
-        static let fnfErr: Int32 = -43
-        static let userCanceledErr: Int32 = -128
-        static let errAEWaitCanceled: Int32 = -1711
-        static let kernelCanceledErr: Int32 = -2402
-        static let kOTCanceledErr: Int32 = -3180
-        static let kEPERMErr: Int32 = -3200
-        static let kENOENTErr: Int32 = -3201
-        static let kEACCESErr: Int32 = -3212
-        static let kECANCELErr: Int32 = -3273
-        static let coreFoundationUnknownErr = -4960
-        static let afpAccessDenied: Int32 = -5000
-        static let errIACanceled: Int32 = -5385
-        static let kRAConnectionCanceled: Int32 = -7109
-        static let kTXNUserCanceledOperationErr: Int32 = -22004
-        static let kFBCindexingCanceled: Int32 = -30520
-        static let kFBCaccessCanceled: Int32 = -30521
-        static let kFBCsummarizationCanceled: Int32 = -30529
+        package static let kPOSIXErrorBase: Int32 = 100000
+        package static let unimpErr: Int32 = -4
+        package static let ioErr: Int32 = -36
+        package static let eofErr: Int32 = -39
+        package static let fnfErr: Int32 = -43
+        package static let userCanceledErr: Int32 = -128
+        package static let errAEWaitCanceled: Int32 = -1711
+        package static let kernelCanceledErr: Int32 = -2402
+        package static let kOTCanceledErr: Int32 = -3180
+        package static let kEPERMErr: Int32 = -3200
+        package static let kENOENTErr: Int32 = -3201
+        package static let kEACCESErr: Int32 = -3212
+        package static let kEINVALErr: Int32 = -3221
+        package static let kECANCELErr: Int32 = -3273
+        package static let coreFoundationUnknownErr = -4960
+        package static let afpAccessDenied: Int32 = -5000
+        package static let errIACanceled: Int32 = -5385
+        package static let kRAConnectionCanceled: Int32 = -7109
+        package static let kTXNUserCanceledOperationErr: Int32 = -22004
+        package static let kFBCindexingCanceled: Int32 = -30520
+        package static let kFBCaccessCanceled: Int32 = -30521
+        package static let kFBCsummarizationCanceled: Int32 = -30529
 
-        static let fileNotFoundErrors: [Int32] = [Self.fnfErr, Self.kENOENTErr]
-        static let permissionErrors: [Int32] = [Self.afpAccessDenied, Self.kEPERMErr, Self.kEACCESErr]
-        static let cancelErrors: [Int32] = [
+        package static let fileNotFoundErrors: [Int32] = [Self.fnfErr, Self.kENOENTErr]
+        package static let permissionErrors: [Int32] = [Self.afpAccessDenied, Self.kEPERMErr, Self.kEACCESErr]
+        package static let cancelErrors: [Int32] = [
             Self.userCanceledErr,
             Self.errAEWaitCanceled,
             Self.kernelCanceledErr,
