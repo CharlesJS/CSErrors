@@ -40,12 +40,12 @@ public func osStatusError(
     description: String? = nil,
     recoverySuggestion: String? = nil,
     recoveryOptions: [String]? = nil,
-    recoveryAttempter: Any? = nil,
+    recoveryAttempter: (any Sendable)? = nil,
     helpAnchor: String? = nil,
     stringEncoding: String.Encoding? = nil,
     url: URL?,
     underlying: (any Error)? = nil,
-    custom: [String: Any]? = nil
+    custom: [String: any Sendable]? = nil
 ) -> any Error {
     let metadata = ErrorMetadata(
         description: description,
@@ -78,7 +78,7 @@ public func osStatusError(
 public func callOSStatusAPI(
     errorDescription: String? = nil,
     url: URL? = nil,
-    custom customErrorUserInfo: [String : Any]? = nil,
+    custom customErrorUserInfo: [String : any Sendable]? = nil,
     closure: () -> OSStatus
 ) throws {
     let err = closure()
@@ -98,7 +98,7 @@ public func callOSStatusAPI(
 public func callOSStatusAPI<T>(
     errorDescription: String? = nil,
     url: URL? = nil,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: (UnsafeMutablePointer<T>) -> OSStatus
 ) throws -> T {
     let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
@@ -123,7 +123,7 @@ public func callOSStatusAPI<T>(
 public func callOSStatusAPI<T>(
     errorDescription: String? = nil,
     url: URL? = nil,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: (UnsafeMutablePointer<T?>) -> OSStatus
 ) throws -> T {
     var ret: T? = nil
@@ -141,13 +141,13 @@ public func callOSStatusAPI<T>(
     return ret
 }
 
-extension OSStatusError: _CSErrorsOSStatusInternal {
+extension OSStatusError: @retroactive _CSErrorsOSStatusInternal {
     package static func getFailureReason(_ osStatus: OSStatus) -> String? {
         SecCopyErrorMessageString(osStatus, nil) as String?
     }
 }
 
-extension OSStatusError: CustomNSError {
+extension OSStatusError: @retroactive CustomNSError {
     public static var errorDomain: String { NSOSStatusErrorDomain }
     public var errorCode: Int { Int(self.rawValue) }
     public var errorUserInfo: [String : Any] { self.metadata.toUserInfo() }

@@ -7,21 +7,21 @@
 
 import System
 
-public struct ErrorMetadata {
+public struct ErrorMetadata: Sendable {
     public let description: String?
     public internal(set) var failureReason: String?
     public let recoverySuggestion: String?
     public let recoveryOptions: [String]?
-    public let recoveryAttempter: Any?
+    public let recoveryAttempter: (any Sendable)?
     public let helpAnchor: String?
     @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
     public var path: FilePath? { self.pathWrapper?.path }
     public var pathString: String? { self.pathWrapper?.string }
     public let underlying: (any Error)?
-    public let custom: [String : Any]?
+    public let custom: [String : any Sendable]?
 
-    private enum PathWrapper {
-        case path(Any)
+    private enum PathWrapper: Sendable {
+        case path(any Sendable)
         case string(String)
 
         @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
@@ -59,11 +59,11 @@ public struct ErrorMetadata {
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
         recoveryOptions: [String]? = nil,
-        recoveryAttempter: Any? = nil,
+        recoveryAttempter: (any Sendable)? = nil,
         helpAnchor: String? = nil,
         path: FilePath,
         underlying: (any Error)? = nil,
-        custom: [String: Any]? = nil
+        custom: [String: any Sendable]? = nil
     ) {
         self.description = description
         self.failureReason = failureReason
@@ -81,11 +81,11 @@ public struct ErrorMetadata {
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
         recoveryOptions: [String]? = nil,
-        recoveryAttempter: Any? = nil,
+        recoveryAttempter: (any Sendable)? = nil,
         helpAnchor: String? = nil,
         path: String? = nil,
         underlying: (any Error)? = nil,
-        custom: [String: Any]? = nil
+        custom: [String: any Sendable]? = nil
     ) {
         self.description = description
         self.failureReason = failureReason

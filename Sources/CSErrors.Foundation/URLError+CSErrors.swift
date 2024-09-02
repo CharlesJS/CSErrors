@@ -41,12 +41,12 @@ extension URLError {
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
         recoveryOptions: [String]? = nil,
-        recoveryAttempter: Any? = nil,
+        recoveryAttempter: (any Sendable)? = nil,
         helpAnchor: String? = nil,
         stringEncoding: String.Encoding? = nil,
         url: URL? = nil,
         underlying: (any Error)? = nil,
-        custom: [String: Any]? = nil
+        custom: [String: any Sendable]? = nil
     ) {
         let metadata = ErrorMetadata(
             description: description,
@@ -65,7 +65,7 @@ extension URLError {
     }
 }
 
-extension URLError: CSErrorProtocol {
+extension URLError: @retroactive CSErrorProtocol {
     public var isFileNotFoundError: Bool {
         self.code == .fileDoesNotExist
     }

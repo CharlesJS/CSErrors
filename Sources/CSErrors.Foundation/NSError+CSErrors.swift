@@ -9,7 +9,7 @@ import CSErrors
 import Foundation
 import System
 
-extension NSError: CSNSErrorProtocol {
+extension NSError: @retroactive CSNSErrorProtocol {
     package func toCSErrorProtocol() -> (CSErrorProtocol)? {
         switch self.domain {
         case NSCocoaErrorDomain:

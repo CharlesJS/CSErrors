@@ -49,7 +49,7 @@ class RecoverabilityTests: XCTestCase {
             expectation.fulfill()
         }
 
-        self.waitForExpectations(timeout: 10)
+        self.wait(for: [expectation], timeout: 10)
     }
 
     func testAsyncAttempter() async throws {
@@ -74,7 +74,7 @@ class RecoverabilityTests: XCTestCase {
             helpAnchor: "Qux"
         )
 
-        let syncAttempter: (Int) -> Bool = {
+        let syncAttempter: @Sendable (Int) -> Bool = {
             Task {
                 await callCounts.incrementSync()
                 expectation.fulfill()
@@ -83,7 +83,7 @@ class RecoverabilityTests: XCTestCase {
             return $0 == 1
         }
 
-        let asyncAttempter: (Int) async -> Bool = {
+        let asyncAttempter: @Sendable (Int) async -> Bool = {
             await callCounts.incrementAsync()
             expectation.fulfill()
 
@@ -168,16 +168,15 @@ class RecoverabilityTests: XCTestCase {
             expectation.fulfill()
         }
 
-
-        self.waitForExpectations(timeout: 10)
+        self.wait(for: [expectation], timeout: 10)
     }
 
     func testCancelledError() {
         let expectation = self.expectation(description: "Test Cancelled Errors")
         expectation.expectedFulfillmentCount = 4
 
-        let attempter: (Int) -> Bool = { $0 == 0 }
-        let asyncAttempter: (Int) async -> Bool = { $0 == 0 }
+        let attempter: @Sendable (Int) -> Bool = { $0 == 0 }
+        let asyncAttempter: @Sendable (Int) async -> Bool = { $0 == 0 }
 
         let nonCanceledErr = Errno.textFileBusy.makeRecoverable(
             recoveryOptions: ["foo", "bar"],
@@ -217,11 +216,11 @@ class RecoverabilityTests: XCTestCase {
             expectation.fulfill()
         }
 
-        self.waitForExpectations(timeout: 10)
+        self.wait(for: [expectation], timeout: 10)
     }
 
     func testProtocolCompliance() {
-        let a: (Int) -> Bool = { _ in true }
+        let a: @Sendable (Int) -> Bool = { _ in true }
         XCTAssertTrue(a(0)) // just to satisfy the coverage check
 
         XCTAssertTrue(Errno.noSuchFileOrDirectory.makeRecoverable(recoveryOptions: [], attempter: a).isFileNotFoundError)

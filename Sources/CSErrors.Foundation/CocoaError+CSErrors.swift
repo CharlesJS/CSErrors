@@ -44,12 +44,12 @@ extension CocoaError {
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
         recoveryOptions: [String]? = nil,
-        recoveryAttempter: Any? = nil,
+        recoveryAttempter: (any Sendable)? = nil,
         helpAnchor: String? = nil,
         stringEncoding: String.Encoding? = nil,
         path: FilePath,
         underlying: (any Error)? = nil,
-        custom: [String: Any]? = nil
+        custom: [String: any Sendable]? = nil
     ) {
         let metadata = ErrorMetadata(
             description: description,
@@ -105,12 +105,12 @@ extension CocoaError {
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
         recoveryOptions: [String]? = nil,
-        recoveryAttempter: Any? = nil,
+        recoveryAttempter: (any Sendable)? = nil,
         helpAnchor: String? = nil,
         stringEncoding: String.Encoding? = nil,
         url: URL? = nil,
         underlying: (any Error)? = nil,
-        custom: [String: Any]? = nil
+        custom: [String: any Sendable]? = nil
     ) {
         let metadata = ErrorMetadata(
             description: description,
@@ -129,7 +129,7 @@ extension CocoaError {
     }
 }
 
-extension CocoaError: CSErrorProtocol {
+extension CocoaError: @retroactive CSErrorProtocol {
     public var isFileNotFoundError: Bool {
         [.fileNoSuchFile, .fileReadNoSuchFile, .ubiquitousFileUnavailable].contains(self.code)
     }

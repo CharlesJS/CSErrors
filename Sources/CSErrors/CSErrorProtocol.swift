@@ -1,6 +1,6 @@
 //
-//  Internal.swift
-//  
+//  CSErrorProtocol.swift
+//
 //
 //  Created by Charles Srstka on 1/10/23.
 //

@@ -94,7 +94,7 @@ private func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
     }
 }
 
-extension POSIXConnector: _CSErrorsPOSIXErrorInternal {
+extension POSIXConnector: @retroactive _CSErrorsPOSIXErrorInternal {
     @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
     package func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> any Error {
         guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, macCatalyst 15.0, *), versionCheck(12) else {

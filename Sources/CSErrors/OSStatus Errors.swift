@@ -112,11 +112,11 @@ public func osStatusError(
     isWrite: Bool = false,
     recoverySuggestion: String? = nil,
     recoveryOptions: [String]? = nil,
-    recoveryAttempter: Any? = nil,
+    recoveryAttempter: (any Sendable)? = nil,
     helpAnchor: String? = nil,
     path: FilePath,
     underlying: (any Error)? = nil,
-    custom: [String: Any]? = nil
+    custom: [String: any Sendable]? = nil
 ) -> any Error {
     if let err = translateOSStatusToPOSIX(osStatus) {
         return errno(err, path: path, isWrite: isWrite)
@@ -163,11 +163,11 @@ public func osStatusError(
     isWrite: Bool = false,
     recoverySuggestion: String? = nil,
     recoveryOptions: [String]? = nil,
-    recoveryAttempter: Any? = nil,
+    recoveryAttempter: (any Sendable)? = nil,
     helpAnchor: String? = nil,
     path: String? = nil,
     underlying: (any Error)? = nil,
-    custom: [String: Any]? = nil
+    custom: [String: any Sendable]? = nil
 ) -> any Error {
     if let err = translateOSStatusToPOSIX(osStatus) {
         return errno(err, path: path, isWrite: isWrite)
@@ -208,7 +208,7 @@ internal func translateOSStatusToPOSIX(_ code: some BinaryInteger) -> Int32? {
 public func callOSStatusAPI(
     errorDescription: String? = nil,
     path: FilePath,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: () -> OSStatus
 ) throws {
     let err = closure()
@@ -227,7 +227,7 @@ public func callOSStatusAPI(
 public func callOSStatusAPI(
     errorDescription: String? = nil,
     path: String? = nil,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: () -> OSStatus
 ) throws {
     let err = closure()
@@ -247,7 +247,7 @@ public func callOSStatusAPI(
 public func callOSStatusAPI<T: Numeric>(
     errorDescription: String? = nil,
     path: FilePath,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: (UnsafeMutablePointer<T>) -> OSStatus
 ) throws -> T {
     var ret = 0 as T
@@ -269,7 +269,7 @@ public func callOSStatusAPI<T: Numeric>(
 public func callOSStatusAPI<T: Numeric>(
     errorDescription: String? = nil,
     path: String? = nil,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: (UnsafeMutablePointer<T>) -> OSStatus
 ) throws -> T {
     var ret = 0 as T
@@ -292,7 +292,7 @@ public func callOSStatusAPI<T: Numeric>(
 public func callOSStatusAPI<T>(
     errorDescription: String? = nil,
     path: FilePath,
-    customErrorUserInfo: [String : Any]? = nil,
+    customErrorUserInfo: [String : any Sendable]? = nil,
     closure: (UnsafeMutablePointer<T?>) -> OSStatus
 ) throws -> T {
     var ret: T? = nil

@@ -43,12 +43,12 @@ extension ErrorMetadata {
         failureReason: String? = nil,
         recoverySuggestion: String? = nil,
         recoveryOptions: [String]? = nil,
-        recoveryAttempter: Any? = nil,
+        recoveryAttempter: (any Sendable)? = nil,
         helpAnchor: String? = nil,
         stringEncoding: String.Encoding? = nil,
         url: URL? = nil,
         underlying: (any Error)? = nil,
-        custom _custom: [String: Any]? = nil
+        custom _custom: [String: any Sendable]? = nil
     ) {
         var custom = _custom ?? [:]
         var path: String? = nil

@@ -24,8 +24,8 @@ extension Error {
     /// - Returns: An error which responds to the `RecoverableError` protocol.
     public func makeRecoverable(
         recoveryOptions: [String],
-        attempter: @escaping (Int) -> Bool,
-        asyncAttempter: ((Int) async -> Bool)? = nil
+        attempter: @escaping @Sendable (Int) -> Bool,
+        asyncAttempter: (@Sendable (Int) async -> Bool)? = nil
     ) -> some RecoverableError {
         RecoverableErrorWrapper(
             underlying: self,
@@ -74,16 +74,16 @@ extension Error {
 private struct RecoverableErrorWrapper: LocalizedError, RecoverableError {
     let underlying: any Error
     let recoveryOptions: [String]
-    let attempter: (Int) -> Bool
-    let asyncAttempter: ((Int) async -> Bool)?
+    let attempter: @Sendable (Int) -> Bool
+    let asyncAttempter: (@Sendable (Int) async -> Bool)?
 
     var errorDescription: String? { return self.underlying.localizedDescription }
 
     init(
         underlying: any Error,
         recoveryOptions: [String],
-        attempter: @escaping (Int) -> Bool,
-        asyncAttempter: ((Int) async -> Bool)?
+        attempter: @escaping @Sendable (Int) -> Bool,
+        asyncAttempter: (@Sendable (Int) async -> Bool)?
     ) {
         self.underlying = underlying
         self.recoveryOptions = recoveryOptions
@@ -113,8 +113,15 @@ private struct RecoverableErrorWrapper: LocalizedError, RecoverableError {
             if self.underlying.isCancelledError {
                 handler(false)
             } else {
+                class HandlerWrapper: @unchecked Sendable {
+                    let handler: (Bool) -> Void
+                    init(handler: @escaping (Bool) -> Void) { self.handler = handler }
+                }
+
+                let wrapper = HandlerWrapper(handler: handler)
+
                 Task {
-                    handler(await asyncAttempter(optionIndex))
+                    wrapper.handler(await asyncAttempter(optionIndex))
                 }
             }
         } else {

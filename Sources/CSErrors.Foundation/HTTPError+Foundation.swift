@@ -8,9 +8,9 @@
 import Foundation
 import CSErrors
 
-extension HTTPError: LocalizedError {}
+extension HTTPError: @retroactive LocalizedError {}
 
-extension HTTPError: _CSErrorsHTTPErrorInternal {
+extension HTTPError: @retroactive _CSErrorsHTTPErrorInternal {
     package var statusCodeString: String {
         HTTPURLResponse.localizedString(forStatusCode: self.statusCode)
     }
