@@ -129,7 +129,7 @@ extension CocoaError {
     }
 }
 
-extension CocoaError: @retroactive CSErrorProtocol {
+extension CocoaError {
     public var isFileNotFoundError: Bool {
         [.fileNoSuchFile, .fileReadNoSuchFile, .ubiquitousFileUnavailable].contains(self.code)
     }
@@ -142,3 +142,9 @@ extension CocoaError: @retroactive CSErrorProtocol {
         self.code == .userCancelled
     }
 }
+
+#if compiler(>=6)
+extension CocoaError: @retroactive CSErrorProtocol {}
+#else
+extension CocoaError: CSErrorProtocol {}
+#endif

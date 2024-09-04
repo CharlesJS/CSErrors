@@ -141,16 +141,22 @@ public func callOSStatusAPI<T>(
     return ret
 }
 
-extension OSStatusError: @retroactive _CSErrorsOSStatusInternal {
+extension OSStatusError {
     package static func getFailureReason(_ osStatus: OSStatus) -> String? {
         SecCopyErrorMessageString(osStatus, nil) as String?
     }
-}
 
-extension OSStatusError: @retroactive CustomNSError {
     public static var errorDomain: String { NSOSStatusErrorDomain }
     public var errorCode: Int { Int(self.rawValue) }
     public var errorUserInfo: [String : Any] { self.metadata.toUserInfo() }
 }
+
+#if compiler(>=6)
+extension OSStatusError: @retroactive _CSErrorsOSStatusInternal {}
+extension OSStatusError: @retroactive CustomNSError {}
+#else
+extension OSStatusError: _CSErrorsOSStatusInternal {}
+extension OSStatusError: CustomNSError {}
+#endif
 
 #endif

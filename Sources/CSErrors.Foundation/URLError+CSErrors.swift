@@ -65,7 +65,7 @@ extension URLError {
     }
 }
 
-extension URLError: @retroactive CSErrorProtocol {
+extension URLError {
     public var isFileNotFoundError: Bool {
         self.code == .fileDoesNotExist
     }
@@ -78,3 +78,9 @@ extension URLError: @retroactive CSErrorProtocol {
         [.cancelled, .userCancelledAuthentication].contains(self.code)
     }
 }
+
+#if compiler(>=6)
+extension URLError: @retroactive CSErrorProtocol {}
+#else
+extension URLError: CSErrorProtocol {}
+#endif
