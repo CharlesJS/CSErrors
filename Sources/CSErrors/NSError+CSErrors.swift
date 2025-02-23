@@ -5,12 +5,17 @@
 //  Created by Charles Srstka on 11/11/23.
 //
 
-import CSErrors
-import Foundation
 import System
 
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
 extension NSError {
-    package func toCSErrorProtocol() -> (CSErrorProtocol)? {
+    internal func toCSErrorProtocol() -> (any CSErrorProtocol)? {
         switch self.domain {
         case NSCocoaErrorDomain:
             return self as? CocoaError
@@ -22,8 +27,4 @@ extension NSError {
     }
 }
 
-#if compiler(>=6)
-extension NSError: @retroactive CSNSErrorProtocol {}
-#else
-extension NSError: CSNSErrorProtocol {}
 #endif

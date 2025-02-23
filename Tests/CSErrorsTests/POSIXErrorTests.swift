@@ -9,6 +9,14 @@ import System
 import XCTest
 @testable import CSErrors
 
+#if canImport(Darwin)
+import Darwin
+func setErrno(_ e: Int32) { Darwin.errno = e }
+#elseif canImport(Glibc)
+import Glibc
+func setErrno(_ e: Int32) { Glibc.errno = e }
+#endif
+
 @available(macOS 13.0, *)
 class POSIXErrorTests: XCTestCase {
     private static let nonexistentPath: String = {
@@ -19,7 +27,18 @@ class POSIXErrorTests: XCTestCase {
     }()
 
     private func assertErrno<I: BinaryInteger>(_ err: Errno, closure: () throws -> I) {
-        XCTAssertThrowsError(try closure()) { XCTAssertEqual($0 as? Errno, err) }
+        XCTAssertThrowsError(try closure()) {
+#if Foundation
+            switch err {
+            case .noSuchFileOrDirectory:
+                XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
+            default:
+                XCTAssertEqual($0 as? Errno, err)
+            }
+#else
+            XCTAssertEqual($0 as? Errno, err)
+#endif
+        }
     }
 
     func testFileNotFound() {
@@ -70,26 +89,37 @@ class POSIXErrorTests: XCTestCase {
     }
 
     func testSystemErrno() {
-        Foundation.errno = EINVAL
+        setErrno(EINVAL)
         XCTAssertEqual(errno() as? Errno, .invalidArgument)
         XCTAssertEqual(errno(path: "/dev/null") as? Errno, .invalidArgument)
         XCTAssertEqual(errno(path: FilePath("/dev/null")) as? Errno, .invalidArgument)
 
-        Foundation.errno = EBADF
+        setErrno(EBADF)
         XCTAssertEqual(errno() as? Errno, .badFileDescriptor)
         XCTAssertEqual(errno(path: "/dev/null") as? Errno, .badFileDescriptor)
         XCTAssertEqual(errno(path: FilePath("/dev/null")) as? Errno, .badFileDescriptor)
 
-        Foundation.errno = ECANCELED
+        setErrno(ECANCELED)
+#if Foundation
+        XCTAssertEqual((errno() as? CocoaError)?.code, .userCancelled)
+        XCTAssertEqual((errno(path: "/dev/null") as? CocoaError)?.code, .userCancelled)
+        XCTAssertEqual((errno(path: FilePath("/dev/null")) as? CocoaError)?.code, .userCancelled)
+#else
         XCTAssertEqual(errno() as? Errno, .canceled)
         XCTAssertEqual(errno(path: "/dev/null") as? Errno, .canceled)
         XCTAssertEqual(errno(path: FilePath("/dev/null")) as? Errno, .canceled)
+#endif
     }
 
     func testPassedInErrno() {
         XCTAssertEqual(errno(EINVAL) as? Errno, .invalidArgument)
         XCTAssertEqual(errno(EBADF) as? Errno, .badFileDescriptor)
+
+#if Foundation
+        XCTAssertEqual((errno(ECANCELED) as? CocoaError)?.code, .userCancelled)
+#else
         XCTAssertEqual(errno(ECANCELED) as? Errno, .canceled)
+#endif
     }
 
     func testZeroErrno() {
@@ -110,9 +140,17 @@ class POSIXErrorTests: XCTestCase {
             for eachCode in [EINVAL, EBADF, ECANCELED] {
                 let err = errno(eachCode)
 
+#if Foundation
+                if eachCode == ECANCELED {
+                    XCTAssertEqual((err as? CocoaError)?.code, .userCancelled)
+                } else {
+                    XCTAssertTrue((err as? POSIXError)?.code.rawValue == eachCode)
+                }
+#else
                 XCTAssertTrue(err is GenericError)
                 XCTAssertEqual(err._domain, NSPOSIXErrorDomain)
                 XCTAssertEqual(err._code, Int(eachCode))
+#endif
             }
         }
     }
@@ -229,13 +267,21 @@ class POSIXErrorTests: XCTestCase {
         XCTAssertEqual(info2.st_mode, 0o100644)
 
         XCTAssertThrowsError(try callPOSIXFunction(expect: .zero) { lstat(Self.nonexistentPath, $0) }) {
+#if Foundation
+            XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
+#else
             XCTAssertEqual($0 as? Errno, .noSuchFileOrDirectory)
+#endif
         }
 
         XCTAssertThrowsError(try callPOSIXFunction(expect: .zero, path: FilePath(Self.nonexistentPath)) {
             lstat(Self.nonexistentPath, $0)
         }) {
+#if Foundation
+            XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
+#else
             XCTAssertEqual($0 as? Errno, .noSuchFileOrDirectory)
+#endif
         }
     }
 

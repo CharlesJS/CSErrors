@@ -5,7 +5,9 @@
 //  Created by Charles Srstka on 1/16/23.
 //
 
-import CSErrors_Foundation
+#if Foundation
+
+import CSErrors
 import System
 import XCTest
 
@@ -63,3 +65,5 @@ class CocoaErrorTests: XCTestCase {
         XCTAssertFalse(CocoaError(.fileNoSuchFile).isCancelledError)
     }
 }
+
+#endif

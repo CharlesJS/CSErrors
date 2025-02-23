@@ -5,7 +5,9 @@
 //  Created by Charles Srstka on 1/12/23.
 //
 
-@testable import CSErrors // this mapping should occur regardless of whether CSErrors_Foundation is imported
+#if Foundation
+
+@testable import CSErrors
 import System
 import XCTest
 
@@ -82,3 +84,5 @@ class ErrnoCocoaMappingTests: XCTestCase {
         }
     }
 }
+
+#endif

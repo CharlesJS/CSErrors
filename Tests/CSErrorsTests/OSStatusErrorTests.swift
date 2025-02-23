@@ -24,7 +24,8 @@ class OSStatusErrorTests: XCTestCase {
 
         func compareErrors(_ e1: any Error, _ e2: any Error) {
             XCTAssertTrue(type(of: e1) == type(of: e2), "\(type(of: e1)) is not same type as \(type(of: e2))")
-            XCTAssertEqual(e1 as NSError, e2 as NSError)
+            XCTAssertEqual((e1 as NSError).domain, (e2 as NSError).domain)
+            XCTAssertEqual((e1 as NSError).code, (e2 as NSError).code)
         }
 
         func assertUnknownError(_ e: any Error) {
@@ -149,10 +150,10 @@ class OSStatusErrorTests: XCTestCase {
             var matched = false
 
             if issue.type == .assertionFailure, issue.associatedError == nil {
-                if !failedTypeCheck, issue.description.contains("\(type(of: error)) is not same type as SomeOtherError") {
+                if issue.description.contains("\(type(of: error)) is not same type as SomeOtherError") {
                     failedTypeCheck = true
                     matched = true
-                } else if !failedEqualityCheck, issue.description.contains(" is not equal to ") {
+                } else if issue.description.contains(" is not equal to ") {
                     failedEqualityCheck = true
                     matched = true
                 }
@@ -181,7 +182,13 @@ class OSStatusErrorTests: XCTestCase {
         checkFNFError(kENOENTErr, OSStatusError(rawValue: OSStatusError.Codes.kENOENTErr), true)
         checkFNFError(kEINVALErr, OSStatusError(rawValue: OSStatusError.Codes.kEINVALErr), false)
 
-        checkFNFError(kPOSIXErrorENOENT, Errno.noSuchFileOrDirectory, true)
+#if Foundation
+        let nsfError = CocoaError(.fileReadNoSuchFile)
+#else
+        let nsfError = Errno.noSuchFileOrDirectory
+#endif
+
+        checkFNFError(kPOSIXErrorENOENT, nsfError, true)
         checkFNFError(kPOSIXErrorEINVAL, Errno.invalidArgument, false)
 
         XCTAssertTrue(
@@ -213,6 +220,38 @@ class OSStatusErrorTests: XCTestCase {
                 _code: Int(OSStatusError.Codes.kPOSIXErrorBase + EINVAL)
             ).isFileNotFoundError
         )
+
+#if Foundation
+        XCTAssertTrue(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.fnfErr)).isFileNotFoundError
+        )
+
+        XCTAssertFalse(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.ioErr)).isFileNotFoundError
+        )
+
+        XCTAssertTrue(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.kENOENTErr)).isFileNotFoundError
+        )
+
+        XCTAssertFalse(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.kEINVALErr)).isFileNotFoundError
+        )
+
+        XCTAssertTrue(
+            NSError(
+                domain: NSOSStatusErrorDomain,
+                code: Int(OSStatusError.Codes.kPOSIXErrorBase + ENOENT)
+            ).isFileNotFoundError
+        )
+
+        XCTAssertFalse(
+            NSError(
+                domain: NSOSStatusErrorDomain,
+                code: Int(OSStatusError.Codes.kPOSIXErrorBase + EINVAL)
+            ).isFileNotFoundError
+        )
+#endif
     }
 
     func testPermissionError() {
@@ -228,8 +267,16 @@ class OSStatusErrorTests: XCTestCase {
         checkPermError(afpAccessDenied, OSStatusError(rawValue: OSStatus(afpAccessDenied)), true)
         checkPermError(fnfErr, OSStatusError(rawValue: OSStatus(fnfErr)), false)
 
-        checkPermError(kPOSIXErrorEACCES, Errno.permissionDenied, true)
-        checkPermError(kPOSIXErrorEPERM, Errno.notPermitted, true)
+#if Foundation
+        let eaccesError = CocoaError(.fileReadNoPermission)
+        let epermError = CocoaError(.fileReadNoPermission)
+#else
+        let eaccesError = Errno.permissionDenied
+        let epermError = Errno.notPermitted
+#endif
+
+        checkPermError(kPOSIXErrorEACCES, eaccesError, true)
+        checkPermError(kPOSIXErrorEPERM, epermError, true)
 
         checkPermError(kEACCESErr, OSStatusError(rawValue: OSStatus(kEACCESErr)), true)
         checkPermError(kEPERMErr, OSStatusError(rawValue: OSStatus(kEPERMErr)), true)
@@ -263,6 +310,38 @@ class OSStatusErrorTests: XCTestCase {
         XCTAssertTrue(
             GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.kEPERMErr)).isPermissionError
         )
+
+#if Foundation
+        XCTAssertTrue(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.afpAccessDenied)).isPermissionError
+        )
+
+        XCTAssertFalse(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.fnfErr)).isPermissionError
+        )
+
+        XCTAssertTrue(
+            NSError(
+                domain: NSOSStatusErrorDomain,
+                code: Int(OSStatusError.Codes.kPOSIXErrorBase + EACCES)
+            ).isPermissionError
+        )
+
+        XCTAssertTrue(
+            NSError(
+                domain: NSOSStatusErrorDomain,
+                code: Int(OSStatusError.Codes.kPOSIXErrorBase + EPERM)
+            ).isPermissionError
+        )
+
+        XCTAssertTrue(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.kEACCESErr)).isPermissionError
+        )
+
+        XCTAssertTrue(
+            NSError(domain: NSOSStatusErrorDomain, code: Int(OSStatusError.Codes.kEPERMErr)).isPermissionError
+        )
+#endif
     }
 
     func testCancelledError() {
@@ -290,9 +369,18 @@ class OSStatusErrorTests: XCTestCase {
         ] {
             checkCancelError(code, OSStatusError(rawValue: code), true)
             XCTAssertTrue(GenericError(_domain: NSOSStatusErrorDomain, _code: Int(code)).isCancelledError)
+#if Foundation
+            XCTAssertTrue(NSError(domain: NSOSStatusErrorDomain, code: Int(code)).isCancelledError)
+#endif
         }
 
-        checkCancelError(OSStatusError.Codes.kPOSIXErrorBase + ECANCELED, Errno.canceled, true)
+#if Foundation
+        let cancelError = CocoaError(.userCancelled)
+#else
+        let cancelError = Errno.canceled
+#endif
+
+        checkCancelError(OSStatusError.Codes.kPOSIXErrorBase + ECANCELED, cancelError, true)
         checkCancelError(OSStatusError.Codes.ioErr, OSStatusError(rawValue: OSStatus(OSStatusError.Codes.ioErr)), false)
 
         XCTAssertTrue(
@@ -302,7 +390,166 @@ class OSStatusErrorTests: XCTestCase {
             ).isCancelledError
         )
 
+#if Foundation
+        XCTAssertTrue(
+            NSError(
+                domain: NSOSStatusErrorDomain,
+                code: Int(OSStatusError.Codes.kPOSIXErrorBase + ECANCELED)
+            ).isCancelledError
+        )
+#endif
+
         XCTAssertFalse(GenericError(_domain: NSOSStatusErrorDomain, _code: Int(OSStatusError.Codes.ioErr)).isCancelledError)
     }
+
+#if Foundation
+
+    func testCustomNSErrorConformance() throws {
+        let err = try XCTUnwrap(osStatusError(OSStatusError.Codes.fnfErr, description: "Hello World") as? OSStatusError)
+
+        XCTAssertEqual(OSStatusError.errorDomain, NSOSStatusErrorDomain)
+        XCTAssertEqual(err.errorCode, fnfErr)
+        XCTAssertEqual(err.errorUserInfo[NSLocalizedDescriptionKey] as? String, "Hello World")
+    }
+
+    func testUserInfoWithFilePath() {
+        let err = osStatusError(
+            OSStatusError.Codes.fnfErr,
+            description: "desc",
+            recoverySuggestion: "suggestion",
+            recoveryOptions: ["one", "two", "three"],
+            recoveryAttempter: "attempter",
+            helpAnchor: "anchor",
+            path: FilePath("/path/to/file"),
+            underlying: Errno.noSuchFileOrDirectory,
+            custom: ["foo" : "bar"]
+        )
+
+        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatusError.Codes.fnfErr)
+
+        let userInfo = (err as NSError).userInfo
+        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "desc")
+        XCTAssertEqual(userInfo[NSLocalizedRecoverySuggestionErrorKey] as? String, "suggestion")
+        XCTAssertEqual(userInfo[NSLocalizedRecoveryOptionsErrorKey] as? [String], ["one", "two", "three"])
+        XCTAssertEqual(userInfo[NSRecoveryAttempterErrorKey] as? String, "attempter")
+        XCTAssertEqual(userInfo[NSHelpAnchorErrorKey] as? String, "anchor")
+        XCTAssertEqual(userInfo[NSFilePathErrorKey] as? String, "/path/to/file")
+        XCTAssertEqual(userInfo[NSUnderlyingErrorKey] as? Errno, .noSuchFileOrDirectory)
+        XCTAssertEqual(userInfo["foo"] as? String, "bar")
+    }
+
+    func testUserInfoWithStringPath() {
+        let err = osStatusError(
+            OSStatusError.Codes.fnfErr,
+            description: "desc",
+            recoverySuggestion: "suggestion",
+            recoveryOptions: ["one", "two", "three"],
+            recoveryAttempter: "attempter",
+            helpAnchor: "anchor",
+            path: "/path/to/file",
+            underlying: Errno.noSuchFileOrDirectory,
+            custom: ["foo" : "bar"]
+        )
+
+        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatusError.Codes.fnfErr)
+
+        let userInfo = (err as NSError).userInfo
+        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "desc")
+        XCTAssertEqual(userInfo[NSLocalizedRecoverySuggestionErrorKey] as? String, "suggestion")
+        XCTAssertEqual(userInfo[NSLocalizedRecoveryOptionsErrorKey] as? [String], ["one", "two", "three"])
+        XCTAssertEqual(userInfo[NSRecoveryAttempterErrorKey] as? String, "attempter")
+        XCTAssertEqual(userInfo[NSHelpAnchorErrorKey] as? String, "anchor")
+        XCTAssertEqual(userInfo[NSFilePathErrorKey] as? String, "/path/to/file")
+        XCTAssertEqual(userInfo[NSUnderlyingErrorKey] as? Errno, .noSuchFileOrDirectory)
+        XCTAssertEqual(userInfo["foo"] as? String, "bar")
+    }
+
+    func testUserInfoWithURLAndStringEncoding() {
+        let err = osStatusError(
+            OSStatusError.Codes.eofErr,
+            stringEncoding: .windowsCP1250,
+            url: URL(filePath: "/path/to/file")
+        )
+
+        XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatusError.Codes.eofErr)
+
+        let userInfo = (err as NSError).userInfo
+        XCTAssertEqual(userInfo[NSStringEncodingErrorKey] as? UInt, String.Encoding.windowsCP1250.rawValue)
+        XCTAssertEqual(userInfo[NSURLErrorKey] as? URL, URL(filePath: "/path/to/file"))
+        XCTAssertEqual(userInfo[NSFilePathErrorKey] as? String, "/path/to/file")
+    }
+
+    func testPOSIXTranslationWithURL() {
+        let err = osStatusError(OSStatusError.Codes.kPOSIXErrorBase + EAUTH, url: URL(filePath: "/path/to/file"))
+
+        XCTAssertEqual(err as? Errno, .authenticationError)
+    }
+
+    func testErrorReason() throws {
+        for code in (OSStatus(-65535)...OSStatus(0)) {
+            let err = try XCTUnwrap(osStatusError(OSStatus(code)) as? OSStatusError)
+            let failureReason = try XCTUnwrap(SecCopyErrorMessageString(code, nil) as String?)
+
+            XCTAssertEqual(err.localizedDescription, failureReason)
+            XCTAssertEqual(err.metadata.failureReason, failureReason)
+        }
+
+        XCTAssertEqual(
+            osStatusError(OSStatusError.Codes.unimpErr).localizedDescription,
+            "Function or operation not implemented."
+        )
+
+        XCTAssertEqual(
+            osStatusError(OSStatus(errSecDataTooLarge)).localizedDescription,
+            "This item contains information which is too large or in a format that cannot be displayed."
+        )
+    }
+
+    func testCallAPIWithURL() {
+        func checkError(_ err: some Error, code: some BinaryInteger, description: String, url: URL) {
+            XCTAssertEqual((err as? OSStatusError)?.rawValue, OSStatus(code))
+
+            let userInfo = (err as NSError).userInfo
+            XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, description)
+            XCTAssertEqual(userInfo[NSURLErrorKey] as? URL, url)
+            XCTAssertEqual(userInfo[NSFilePathErrorKey] as? String, url.path)
+        }
+
+        func funcThatSucceeds() -> OSStatus { 0 }
+        func funcThatFails() -> OSStatus { OSStatusError.Codes.fnfErr }
+        func takesPointerAndSucceeds(_ ptr: UnsafeMutablePointer<Int>) -> OSStatus { ptr.pointee = 1; return 0 }
+        func takesPointerAndFails(_: UnsafeMutablePointer<Int>) -> OSStatus { OSStatusError.Codes.fnfErr }
+        func optionalPointerSucceeds(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = 2; return 0 }
+        func optionalPointerFails(_: UnsafeMutablePointer<Int?>) -> OSStatus { OSStatusError.Codes.fnfErr }
+        func setsPointerToNil(_ ptr: UnsafeMutablePointer<Int?>) -> OSStatus { ptr.pointee = nil; return 0 }
+
+        let url = URL(filePath: "/path/to/file")
+
+        XCTAssertNoThrow(try callOSStatusAPI(errorDescription: "desc", url: url) { funcThatSucceeds() })
+        XCTAssertThrowsError(try callOSStatusAPI(errorDescription: "desc", url: url) { funcThatFails() }) {
+            checkError($0, code: fnfErr, description: "desc", url: url)
+        }
+
+        XCTAssertNoThrow(try callOSStatusAPI(errorDescription: "desc", url: url) { funcThatSucceeds() })
+        XCTAssertThrowsError(try callOSStatusAPI(errorDescription: "desc", url: url) { funcThatFails() }) {
+            checkError($0, code: fnfErr, description: "desc", url: url)
+        }
+
+        XCTAssertEqual(try? callOSStatusAPI(errorDescription: "desc", url: url) { takesPointerAndSucceeds($0) }, 1)
+        XCTAssertThrowsError(try callOSStatusAPI(errorDescription: "desc", url: url) { takesPointerAndFails($0) }) {
+            checkError($0, code: fnfErr, description: "desc", url: url)
+        }
+
+        XCTAssertEqual(try? callOSStatusAPI(errorDescription: "desc", url: url) { optionalPointerSucceeds($0) } as Int, 2)
+        XCTAssertThrowsError(try callOSStatusAPI(errorDescription: "desc", url: url) { optionalPointerFails($0) }) {
+            checkError($0, code: fnfErr, description: "desc", url: url)
+        }
+        XCTAssertThrowsError(try callOSStatusAPI(errorDescription: "desc", url: url) { setsPointerToNil($0) }) {
+            checkError($0, code: OSStatusError.Codes.coreFoundationUnknownErr, description: "desc", url: url)
+        }
+    }
+
+#endif
+
 #endif
 }

@@ -5,8 +5,9 @@
 //  Created by Charles Srstka on 1/16/23.
 //
 
+#if Foundation
+
 @testable import CSErrors
-import CSErrors_Foundation
 import CwlPreconditionTesting
 import System
 import XCTest
@@ -192,3 +193,5 @@ class ErrorMetadataTests: XCTestCase {
         }
     }
 }
+
+#endif

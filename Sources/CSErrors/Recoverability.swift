@@ -5,8 +5,12 @@
 ////  Created by Charles Srstka on 1/10/23.
 ////
 
-import CSErrors
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 extension Error {
     /// A helper for adding recoverability to an existing error.
@@ -143,3 +147,5 @@ extension RecoverableErrorWrapper: CSErrorProtocol {
         self.underlying.isCancelledError
     }
 }
+
+#endif

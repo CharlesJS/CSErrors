@@ -5,7 +5,9 @@
 //  Created by Charles Srstka on 1/15/23.
 //
 
-import CSErrors_Foundation
+#if Foundation
+
+import CSErrors
 import Foundation
 import System
 import XCTest
@@ -114,3 +116,5 @@ class ErrnoURLSupportTests: XCTestCase {
         XCTAssertNotNil(qualifier)
     }
 }
+
+#endif

@@ -5,6 +5,8 @@
 //  Created by Charles Srstka on 11/7/23.
 //
 
+#if Foundation
+
 import XCTest
 
 final class NSErrorTests: XCTestCase {
@@ -78,3 +80,5 @@ final class NSErrorTests: XCTestCase {
         XCTAssertFalse(NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)).isCancelledError)
     }
 }
+
+#endif

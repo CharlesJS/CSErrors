@@ -5,8 +5,12 @@
 //  Created by Charles Srstka on 4/17/20.
 //
 
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
 import Foundation
-import CSErrors
+#endif
 
 extension URLError {
     /// Create a `URLError` with an associated `userInfo` dictionary.
@@ -65,7 +69,7 @@ extension URLError {
     }
 }
 
-extension URLError {
+extension URLError: CSErrorProtocol {
     public var isFileNotFoundError: Bool {
         self.code == .fileDoesNotExist
     }
@@ -79,8 +83,4 @@ extension URLError {
     }
 }
 
-#if compiler(>=6)
-extension URLError: @retroactive CSErrorProtocol {}
-#else
-extension URLError: CSErrorProtocol {}
 #endif

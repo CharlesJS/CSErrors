@@ -5,9 +5,37 @@
 //  Created by Charles Srstka on 4/17/20.
 //
 
-import Foundation
 import System
-import CSErrors
+
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+internal func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
+    switch posixCode {
+    case EPERM, EACCES:
+        return isWrite ? .fileWriteNoPermission : .fileReadNoPermission
+    case ENOENT:
+        return isWrite ? .fileNoSuchFile : .fileReadNoSuchFile
+    case EEXIST:
+        return .fileWriteFileExists
+    case EFBIG:
+        return .fileReadTooLarge
+    case ENOSPC:
+        return .fileWriteOutOfSpace
+    case EROFS:
+        return .fileWriteVolumeReadOnly
+    case EFTYPE:
+        return .fileReadCorruptFile
+    case ECANCELED:
+        return .userCancelled
+    default:
+        return nil
+    }
+}
 
 extension CocoaError {
     /// Create a `CocoaError` with an associated `userInfo` dictionary.
@@ -129,7 +157,7 @@ extension CocoaError {
     }
 }
 
-extension CocoaError {
+extension CocoaError: CSErrorProtocol {
     public var isFileNotFoundError: Bool {
         [.fileNoSuchFile, .fileReadNoSuchFile, .ubiquitousFileUnavailable].contains(self.code)
     }
@@ -143,8 +171,4 @@ extension CocoaError {
     }
 }
 
-#if compiler(>=6)
-extension CocoaError: @retroactive CSErrorProtocol {}
-#else
-extension CocoaError: CSErrorProtocol {}
 #endif

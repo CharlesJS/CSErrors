@@ -5,7 +5,9 @@
 //  Created by Charles Srstka on 1/16/23.
 //
 
-import CSErrors_Foundation
+#if Foundation
+
+import CSErrors
 import System
 import XCTest
 
@@ -233,3 +235,5 @@ class RecoverabilityTests: XCTestCase {
         XCTAssertFalse(Errno.canceled.makeRecoverable(recoveryOptions: [], attempter: a).isPermissionError)
     }
 }
+
+#endif

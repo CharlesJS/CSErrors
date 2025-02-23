@@ -15,16 +15,12 @@ func emulateMacOSVersion(_ vers: Int, closure: () throws -> ()) rethrows {
 }
 
 nonisolated(unsafe) private var emulatedVersion = Int.max
-package func versionCheck(_ vers: Int) -> Bool { emulatedVersion >= vers }
+internal func versionCheck(_ vers: Int) -> Bool { emulatedVersion >= vers }
 #else
-@inline(__always) package func versionCheck(_ vers: Int) -> Bool { true }
+@inline(__always) internal func versionCheck(_ vers: Int) -> Bool { true }
 #endif
 
 internal let cocoaErrorDomain = "NSCocoaErrorDomain"
-
-package protocol CSNSErrorProtocol {
-    func toCSErrorProtocol() -> (any CSErrorProtocol)?
-}
 
 internal struct GenericError: Error {
     static func unknownError(isWrite: Bool) -> GenericError {

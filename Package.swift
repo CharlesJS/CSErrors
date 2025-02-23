@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.1
 
 import PackageDescription
 
@@ -16,10 +16,9 @@ let package = Package(
             name: "CSErrors",
             targets: ["CSErrors"]
         ),
-        .library(
-            name: "CSErrors+Foundation",
-            targets: ["CSErrors.Foundation"]
-        )
+    ],
+    traits: [
+        "Foundation"
     ],
     dependencies: [
         .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0")),
@@ -29,17 +28,9 @@ let package = Package(
             name: "CSErrors",
             dependencies: []
         ),
-        .target(
-            name: "CSErrors.Foundation",
-            dependencies: ["CSErrors"]
-        ),
         .testTarget(
             name: "CSErrorsTests",
             dependencies: ["CSErrors", "CwlPreconditionTesting"]
         ),
-        .testTarget(
-            name: "CSErrors.FoundationTests",
-            dependencies: ["CSErrors.Foundation", "CwlPreconditionTesting"]
-        )
     ]
 )

@@ -1,3 +1,11 @@
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+#endif
+
 public struct HTTPError: CSErrorProtocol {
     public let statusCode: Int
 
@@ -8,9 +16,9 @@ public struct HTTPError: CSErrorProtocol {
     public var failureReason: String? {
         var reason = "HTTP \(self.statusCode)"
 
-        if let i = self as? any _CSErrorsHTTPErrorInternal {
-            reason += " (\(i.statusCodeString))"
-        }
+#if Foundation
+        reason += " (\(HTTPURLResponse.localizedString(forStatusCode: self.statusCode)))"
+#endif
 
         return reason
     }
@@ -22,8 +30,4 @@ public struct HTTPError: CSErrorProtocol {
     public var isCancelledError: Bool { false }
 
     public var _code: Int { self.statusCode }
-}
-
-package protocol _CSErrorsHTTPErrorInternal {
-    var statusCodeString: String { get }
 }

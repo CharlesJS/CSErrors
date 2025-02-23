@@ -15,6 +15,14 @@ import Glibc
 func getErrno() -> Int32 { Glibc.errno }
 #endif
 
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+#endif
+
 internal var posixErrorDomain: String { "NSPOSIXErrorDomain" }
 
 extension Error {
@@ -40,6 +48,37 @@ extension Error {
     }
 }
 
+#if Foundation
+
+public func errno(_ code: Int32 = Foundation.errno, url: URL?, isWrite: Bool = false) -> any Error {
+    if code == 0 {
+        return CocoaError(isWrite ? .fileWriteUnknown : .fileReadUnknown)
+    }
+
+    let cocoaCode = cocoaCode(posixCode: code, isWrite: isWrite)
+    let err: any Error
+
+    if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11) {
+        err = System.Errno(rawValue: code)
+    } else if let posixCode = POSIXErrorCode(rawValue: code) {
+        err = POSIXError(posixCode)
+    } else {
+        err = NSError(domain: NSPOSIXErrorDomain, code: Int(code))
+    }
+
+    if err.isCancelledError {
+        return CocoaError(.userCancelled, url: url, underlying: err)
+    }
+
+    if let cocoaCode {
+        return CocoaError(cocoaCode, url: url, underlying: err)
+    }
+
+    return err
+}
+
+#endif
+
 /// Create an `Error` corresponding to a POSIX error code.
 ///
 /// If `url` is provided, this method will wrap the resulting error in a `CocoaError`, if applicable.
@@ -53,15 +92,15 @@ extension Error {
 public func errno(_ code: Int32? = nil, path: FilePath, isWrite: Bool = false) -> any Error {
     let code = code ?? getErrno()
 
-    if let err = (posixConnector as? _CSErrorsPOSIXErrorInternal)?.translateErrno(code, path: path, isWrite: isWrite) {
-        return err
-    }
-
+#if Foundation
+    return translateErrno(code, path: path, isWrite: isWrite)
+#else
     if code == 0 {
         return GenericError.unknownError(isWrite: isWrite)
     }
 
     return System.Errno(rawValue: code)
+#endif
 }
 
 /// Create an `Error` corresponding to a POSIX error code.
@@ -76,10 +115,9 @@ public func errno(_ code: Int32? = nil, path: FilePath, isWrite: Bool = false) -
 public func errno(_ code: Int32? = nil, path: String? = nil, isWrite: Bool = false) -> any Error {
     let code = code ?? getErrno()
 
-    if let err = (posixConnector as? _CSErrorsPOSIXErrorInternal)?.translateErrno(code, path: path, isWrite: isWrite) {
-        return err
-    }
-
+#if Foundation
+    return translateErrno(code, path: path, isWrite: isWrite)
+#else
     if code == 0 {
         return GenericError.unknownError(isWrite: isWrite)
     }
@@ -89,6 +127,7 @@ public func errno(_ code: Int32? = nil, path: String? = nil, isWrite: Bool = fal
     }
 
     return System.Errno(rawValue: code)
+#endif
 }
 
 public enum POSIXReturnExpectation<I: BinaryInteger> {
@@ -102,6 +141,45 @@ public enum POSIXErrorReturn {
     case globalErrno
     case returnValue
 }
+
+#if Foundation
+
+public func callPOSIXFunction<I: BinaryInteger>(
+    expect expectedReturn: POSIXReturnExpectation<I>,
+    errorFrom errorReturn: POSIXErrorReturn = .globalErrno,
+    url: URL,
+    isWrite: Bool = false,
+    closure: () -> I
+) throws {
+    let (err, isError) = _callPOSIXFunction(expect: expectedReturn, errorFrom: errorReturn, closure: closure)
+    if isError {
+        throw errno(Int32(err), url: url, isWrite: isWrite)
+    }
+}
+
+public func callPOSIXFunction<T, I: BinaryInteger>(
+    expect: POSIXReturnExpectation<I>,
+    errorFrom: POSIXErrorReturn = .globalErrno,
+    url: URL,
+    isWrite: Bool = false,
+    closure: (UnsafeMutablePointer<T>) -> I
+) throws -> T {
+    try callPOSIXFunction(expect: expect, errorFrom: errorFrom, path: url.path, isWrite: isWrite, closure: closure)
+}
+
+public func callPOSIXFunction<T>(url: URL, closure: () -> UnsafeMutablePointer<T>?) throws -> UnsafeMutablePointer<T> {
+    try callPOSIXFunction(path: url.path, closure: closure)
+}
+
+public func callPOSIXFunction(url: URL, closure: () -> UnsafeMutableRawPointer?) throws -> UnsafeMutableRawPointer {
+    try callPOSIXFunction(path: url.path, closure: closure)
+}
+
+public func callPOSIXFunction(url: URL, closure: () -> OpaquePointer?) throws -> OpaquePointer {
+    try callPOSIXFunction(path: url.path, closure: closure)
+}
+
+#endif
 
 @discardableResult
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
@@ -222,7 +300,7 @@ public func callPOSIXFunction(
     return pointer
 }
 
-package func _callPOSIXFunction<I: BinaryInteger>(
+internal func _callPOSIXFunction<I: BinaryInteger>(
     expect: POSIXReturnExpectation<I>,
     errorFrom: POSIXErrorReturn,
     closure: () -> I
@@ -277,12 +355,31 @@ private func _callPOSIXFunction<T, I: BinaryInteger>(
     return .success(returnPointer.pointee)
 }
 
-package struct POSIXConnector {}
-private let posixConnector = POSIXConnector()
+#if Foundation
 
-package protocol _CSErrorsPOSIXErrorInternal {
-    @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
-    func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> any Error
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *)
+internal func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> any Error {
+    guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, macCatalyst 15.0, *), versionCheck(12) else {
+        return translateErrno(code, path: String(decoding: path), isWrite: isWrite)
+    }
 
-    func translateErrno(_ code: Int32, path: String?, isWrite: Bool) -> any Error
+    guard #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.1, *), versionCheck(13) else {
+        return translateErrno(code, path: path.string, isWrite: isWrite)
+    }
+
+    return errno(code, url: URL(filePath: path), isWrite: isWrite)
 }
+
+internal func translateErrno(_ code: Int32, path: String?, isWrite: Bool) -> any Error {
+    let url: URL?
+
+    if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.0, *), versionCheck(13) {
+        url = path.flatMap { URL(filePath: $0) }
+    } else {
+        url = path.map { URL(fileURLWithPath: $0) }
+    }
+
+    return errno(code, url: url, isWrite: isWrite)
+}
+
+#endif

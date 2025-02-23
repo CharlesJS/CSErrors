@@ -5,14 +5,20 @@
 //  Created by Charles Srstka on 12/27/15.
 //
 
-#if canImport(System)
 import System
-#endif
 
 #if canImport(Darwin)
 import Darwin
 #elseif canImport(Glibc)
 import Glibc
+#endif
+
+#if Foundation
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
 #endif
 
 extension Error {
@@ -36,11 +42,13 @@ extension Error {
         if let err = self as? any CSErrorProtocol, err.isFileNotFoundError {
             return true
         }
-        
-        if let err = (self as? any CSNSErrorProtocol)?.toCSErrorProtocol(), err.isFileNotFoundError {
+
+#if Foundation
+        if let err = (self as NSError).toCSErrorProtocol(), err.isFileNotFoundError {
             return true
         }
-        
+#endif
+
         return false
     }
 
@@ -66,9 +74,11 @@ extension Error {
             return true
         }
 
-        if let err = (self as? any CSNSErrorProtocol)?.toCSErrorProtocol(), err.isPermissionError {
+#if Foundation
+        if let err = (self as NSError).toCSErrorProtocol(), err.isPermissionError {
             return true
         }
+#endif
 
         return false
     }
@@ -95,9 +105,11 @@ extension Error {
             return true
         }
 
-        if let err = (self as? any CSNSErrorProtocol)?.toCSErrorProtocol(), err.isCancelledError {
+#if Foundation
+        if let err = (self as NSError).toCSErrorProtocol(), err.isCancelledError {
             return true
         }
+#endif
 
         return false
     }
