@@ -5,14 +5,15 @@
 //  Created by Charles Srstka on 11/11/23.
 //
 
-import System
+#if Foundation && canImport(Darwin)
 
-#if Foundation
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else
 import Foundation
 #endif
+
+import System
 
 extension NSError {
     internal func toCSErrorProtocol() -> (any CSErrorProtocol)? {

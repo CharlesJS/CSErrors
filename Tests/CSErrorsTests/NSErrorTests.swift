@@ -5,7 +5,7 @@
 //  Created by Charles Srstka on 11/7/23.
 //
 
-#if Foundation
+#if Foundation && canImport(Darwin)
 
 import Foundation
 import Testing

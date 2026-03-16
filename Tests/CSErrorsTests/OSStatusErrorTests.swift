@@ -7,10 +7,20 @@
 
 #if canImport(Darwin)
 
-import System
-import Testing
 @testable import CSErrors
+import Testing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
 import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
 
 @Suite("OSStatusError Tests")
 struct OSStatusErrorTests {
@@ -402,7 +412,13 @@ struct OSStatusErrorTests {
         #expect((err as? OSStatusError)?.rawValue == OSStatusError.Codes.eofErr)
 
         let userInfo = (err as NSError).userInfo
-        #expect(userInfo[NSStringEncodingErrorKey] as? UInt == String.Encoding.windowsCP1250.rawValue)
+
+#if Foundation && canImport(Darwin)
+        #expect((userInfo[NSStringEncodingErrorKey] as? UInt) == String.Encoding.windowsCP1250.rawValue)
+#endif
+
+        #expect((userInfo[NSStringEncodingErrorKeyNonDarwin] as? Int) == Int(String.Encoding.windowsCP1250.rawValue))
+
         #expect(userInfo[NSURLErrorKey] as? URL == URL(filePath: "/path/to/file"))
         #expect(userInfo[NSFilePathErrorKey] as? String == "/path/to/file")
     }

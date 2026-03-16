@@ -5,7 +5,8 @@
 //  Created by Charles Srstka on 4/17/20.
 //
 
-#if Foundation
+#if Foundation && canImport(Darwin)
+
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else

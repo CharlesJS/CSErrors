@@ -5,14 +5,22 @@
 //  Created by Charles Srstka on 1/10/23.
 //
 
+#if canImport(SystemPackage)
+import SystemPackage
+#else
 import System
+#endif
 
 #if canImport(Darwin)
 import Darwin
+#else
+public typealias OSStatus = Int32
+#endif
 
 #if Foundation
 #if canImport(FoundationEssentials)
 import FoundationEssentials
+private let NSOSStatusErrorDomain = "NSOSStatusErrorDomain"
 #else
 import Foundation
 #endif
@@ -36,32 +44,33 @@ extension Error {
 public struct OSStatusError: Error {
     internal struct Codes {
         // Some OSStatus codes that we use elsewhere in this package.
-        internal static let kPOSIXErrorBase: Int32 = 100000
-        internal static let unimpErr: Int32 = -4
-        internal static let ioErr: Int32 = -36
-        internal static let eofErr: Int32 = -39
-        internal static let fnfErr: Int32 = -43
-        internal static let userCanceledErr: Int32 = -128
-        internal static let errAEWaitCanceled: Int32 = -1711
-        internal static let kernelCanceledErr: Int32 = -2402
-        internal static let kOTCanceledErr: Int32 = -3180
-        internal static let kEPERMErr: Int32 = -3200
-        internal static let kENOENTErr: Int32 = -3201
-        internal static let kEACCESErr: Int32 = -3212
-        internal static let kEINVALErr: Int32 = -3221
-        internal static let kECANCELErr: Int32 = -3273
+        internal static let noErr: OSStatus = 0
+        internal static let kPOSIXErrorBase: OSStatus = 100000
+        internal static let unimpErr: OSStatus = -4
+        internal static let ioErr: OSStatus = -36
+        internal static let eofErr: OSStatus = -39
+        internal static let fnfErr: OSStatus = -43
+        internal static let userCanceledErr: OSStatus = -128
+        internal static let errAEWaitCanceled: OSStatus = -1711
+        internal static let kernelCanceledErr: OSStatus = -2402
+        internal static let kOTCanceledErr: OSStatus = -3180
+        internal static let kEPERMErr: OSStatus = -3200
+        internal static let kENOENTErr: OSStatus = -3201
+        internal static let kEACCESErr: OSStatus = -3212
+        internal static let kEINVALErr: OSStatus = -3221
+        internal static let kECANCELErr: OSStatus = -3273
         internal static let coreFoundationUnknownErr = -4960
-        internal static let afpAccessDenied: Int32 = -5000
-        internal static let errIACanceled: Int32 = -5385
-        internal static let kRAConnectionCanceled: Int32 = -7109
-        internal static let kTXNUserCanceledOperationErr: Int32 = -22004
-        internal static let kFBCindexingCanceled: Int32 = -30520
-        internal static let kFBCaccessCanceled: Int32 = -30521
-        internal static let kFBCsummarizationCanceled: Int32 = -30529
+        internal static let afpAccessDenied: OSStatus = -5000
+        internal static let errIACanceled: OSStatus = -5385
+        internal static let kRAConnectionCanceled: OSStatus = -7109
+        internal static let kTXNUserCanceledOperationErr: OSStatus = -22004
+        internal static let kFBCindexingCanceled: OSStatus = -30520
+        internal static let kFBCaccessCanceled: OSStatus = -30521
+        internal static let kFBCsummarizationCanceled: OSStatus = -30529
 
-        internal static let fileNotFoundErrors: [Int32] = [Self.fnfErr, Self.kENOENTErr]
-        internal static let permissionErrors: [Int32] = [Self.afpAccessDenied, Self.kEPERMErr, Self.kEACCESErr]
-        internal static let cancelErrors: [Int32] = [
+        internal static let fileNotFoundErrors: [OSStatus] = [Self.fnfErr, Self.kENOENTErr]
+        internal static let permissionErrors: [OSStatus] = [Self.afpAccessDenied, Self.kEPERMErr, Self.kEACCESErr]
+        internal static let cancelErrors: [OSStatus] = [
             Self.userCanceledErr,
             Self.errAEWaitCanceled,
             Self.kernelCanceledErr,
@@ -288,7 +297,7 @@ public func callOSStatusAPI(
 ) throws {
     let err = closure()
 
-    guard err == noErr else {
+    guard err == OSStatusError.Codes.noErr else {
         throw osStatusError(err, description: errorDescription, path: path, custom: customErrorUserInfo)
     }
 }
@@ -307,7 +316,7 @@ public func callOSStatusAPI(
 ) throws {
     let err = closure()
 
-    guard err == noErr else {
+    guard err == OSStatusError.Codes.noErr else {
         throw osStatusError(err, description: errorDescription, path: path, custom: customErrorUserInfo)
     }
 }
@@ -328,7 +337,7 @@ public func callOSStatusAPI<T: Numeric>(
     var ret = 0 as T
     let err = closure(&ret)
 
-    guard err == noErr else {
+    guard err == OSStatusError.Codes.noErr else {
         throw osStatusError(err, description: errorDescription, path: path, custom: customErrorUserInfo)
     }
 
@@ -350,7 +359,7 @@ public func callOSStatusAPI<T: Numeric>(
     var ret = 0 as T
     let err = closure(&ret)
 
-    guard err == noErr else {
+    guard err == OSStatusError.Codes.noErr else {
         throw osStatusError(err, description: errorDescription, path: path, custom: customErrorUserInfo)
     }
 
@@ -373,9 +382,9 @@ public func callOSStatusAPI<T>(
     var ret: T? = nil
     let err = closure(&ret)
 
-    guard err == noErr, let ret = ret else {
+    guard err == OSStatusError.Codes.noErr, let ret = ret else {
         throw osStatusError(
-            err != noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
+            err != OSStatusError.Codes.noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
             description: errorDescription,
             path: path,
             custom: customErrorUserInfo
@@ -399,9 +408,9 @@ public func callOSStatusAPI<T>(
     var ret: T? = nil
     let err = closure(&ret)
 
-    guard err == noErr, let ret = ret else {
+    guard err == OSStatusError.Codes.noErr, let ret = ret else {
         throw osStatusError(
-            err != noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
+            err != OSStatusError.Codes.noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
             description: errorDescription,
             path: path
         )
@@ -427,7 +436,7 @@ public func callOSStatusAPI(
 ) throws {
     let err = closure()
 
-    guard err == noErr else {
+    guard err == OSStatusError.Codes.noErr else {
         throw osStatusError(err, description: errorDescription, url: url, custom: customErrorUserInfo)
     }
 }
@@ -450,7 +459,7 @@ public func callOSStatusAPI<T>(
 
     let err = closure(ptr)
 
-    guard err == noErr else {
+    guard err == OSStatusError.Codes.noErr else {
         throw osStatusError(err, description: errorDescription, url: url, custom: customErrorUserInfo)
     }
 
@@ -473,9 +482,9 @@ public func callOSStatusAPI<T>(
     var ret: T? = nil
     let err = closure(&ret)
 
-    guard err == noErr, let ret = ret else {
+    guard err == OSStatusError.Codes.noErr, let ret = ret else {
         throw osStatusError(
-            err != noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
+            err != OSStatusError.Codes.noErr ? err : OSStatus(OSStatusError.Codes.coreFoundationUnknownErr),
             description: errorDescription,
             url: url,
             custom: customErrorUserInfo
@@ -487,7 +496,11 @@ public func callOSStatusAPI<T>(
 
 extension OSStatusError {
     internal static func getFailureReason(_ osStatus: OSStatus) -> String? {
+#if canImport(Darwin)
         SecCopyErrorMessageString(osStatus, nil) as String?
+#else
+        nil
+#endif
     }
 
     public static var errorDomain: String { NSOSStatusErrorDomain }
@@ -495,8 +508,8 @@ extension OSStatusError {
     public var errorUserInfo: [String : Any] { self.metadata.toUserInfo() }
 }
 
+#if canImport(Darwin)
 extension OSStatusError: CustomNSError {}
-
 #endif
 
 #endif

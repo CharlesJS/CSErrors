@@ -5,15 +5,31 @@
 //  Created by Charles Srstka on 1/11/23.
 //
 
+#if canImport(SystemPackage)
+import SystemPackage
+#else
 import System
+#endif
 
 #if Foundation
 #if canImport(FoundationEssentials)
 import FoundationEssentials
+let NSFilePathErrorKey = "NSFilePath"
+let NSHelpAnchorErrorKey = "NSHelpAnchor"
+let NSLocalizedDescriptionKey = "NSLocalizedDescription"
+let NSLocalizedFailureReasonErrorKey = "NSLocalizedFailureReason"
+let NSRecoveryAttempterErrorKey = "NSRecoveryAttempter"
+let NSLocalizedRecoveryOptionsErrorKey = "NSLocalizedRecoveryOptions"
+let NSLocalizedRecoverySuggestionErrorKey = "NSLocalizedRecoverySuggestion"
+let NSStringEncodingErrorKey = "NSStringEncoding"
+let NSUnderlyingErrorKey = "NSUnderlyingError"
+let NSURLErrorKey = "NSURL"
 #else
 import Foundation
 #endif
 #endif
+
+let NSStringEncodingErrorKeyNonDarwin = "NSStringEncodingErrorKey"
 
 public struct ErrorMetadata: Sendable {
     public let description: String?
@@ -159,7 +175,15 @@ public struct ErrorMetadata: Sendable {
         }
 
         if let stringEncoding {
-            custom[NSStringEncodingErrorKey] = stringEncoding.rawValue
+            // The Darwin version of Foundation stores this as a UInt, other platforms store it as an NSNumber
+            // Also, the string keys they use are different.
+            // https://github.com/swiftlang/swift-foundation/blob/b011018acca72a38179bd4ac9d0377d2f90b4cff/Sources/FoundationEssentials/Error/CocoaError.swift#L108-L114
+
+#if Foundation && canImport(Darwin)
+            custom[NSStringEncodingErrorKey] = NSNumber(value: stringEncoding.rawValue)
+#endif
+
+            custom[NSStringEncodingErrorKeyNonDarwin] = Int(stringEncoding.rawValue)
         }
 
         self.init(
@@ -233,20 +257,30 @@ public struct ErrorMetadata: Sendable {
             return url
         }
 
+#if canImport(Darwin)
         if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, macCatalyst 16.1, *), versionCheck(13),
            let path = self.path, let url = URL(filePath: path) {
             return url
         } else if let path = self.pathString {
             return URL(fileURLWithPath: path)
         }
+#else
+        if let path = self.path {
+            return URL(filePath: path.string)
+        }
+#endif
 
         return nil
     }
 
     public var stringEncoding: String.Encoding? {
-        guard let rawEncoding = self.custom?[NSStringEncodingErrorKey] as? UInt else { return nil }
+        if let rawEncoding = self.custom?[NSStringEncodingErrorKey] as? UInt {
+            return String.Encoding(rawValue: rawEncoding)
+        } else if let rawEncoding = self.custom?[NSStringEncodingErrorKeyNonDarwin] as? Int {
+            return String.Encoding(rawValue: UInt(rawEncoding))
+        }
 
-        return String.Encoding(rawValue: rawEncoding)
+        return nil
     }
 #endif
 }

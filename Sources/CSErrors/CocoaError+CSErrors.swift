@@ -5,13 +5,24 @@
 //  Created by Charles Srstka on 4/17/20.
 //
 
-import System
+
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 #if Foundation
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else
 import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
 #endif
 
 internal func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
@@ -28,8 +39,10 @@ internal func cocoaCode(posixCode: Int32, isWrite: Bool) -> CocoaError.Code? {
         return .fileWriteOutOfSpace
     case EROFS:
         return .fileWriteVolumeReadOnly
+#if canImport(Darwin)
     case EFTYPE:
         return .fileReadCorruptFile
+#endif
     case ECANCELED:
         return .userCancelled
     default:
@@ -94,7 +107,15 @@ extension CocoaError {
         var userInfo = metadata.toUserInfo()
 
         if let stringEncoding {
-            userInfo[NSStringEncodingErrorKey] = stringEncoding.rawValue
+            // The Darwin version of Foundation stores this as a UInt, other platforms store it as an NSNumber
+            // Also, the string keys they use are different.
+            // https://github.com/swiftlang/swift-foundation/blob/b011018acca72a38179bd4ac9d0377d2f90b4cff/Sources/FoundationEssentials/Error/CocoaError.swift#L108-L114
+
+#if Foundation && canImport(Darwin)
+            userInfo[NSStringEncodingErrorKey] = NSNumber(value: stringEncoding.rawValue)
+#endif
+
+            userInfo[NSStringEncodingErrorKeyNonDarwin] = Int(stringEncoding.rawValue)
         }
 
         self.init(code, userInfo: userInfo)
@@ -159,11 +180,20 @@ extension CocoaError {
 
 extension CocoaError: CSErrorProtocol {
     public var isFileNotFoundError: Bool {
-        [.fileNoSuchFile, .fileReadNoSuchFile, .ubiquitousFileUnavailable].contains(self.code)
+        switch self.code {
+        case .fileNoSuchFile, .fileReadNoSuchFile: true
+#if canImport(Darwin)
+        case .ubiquitousFileUnavailable: true
+#endif
+        default: false
+        }
     }
 
     public var isPermissionError: Bool {
-        [.fileReadNoPermission, .fileWriteNoPermission].contains(self.code)
+        switch self.code {
+        case .fileReadNoPermission, .fileWriteNoPermission: true
+        default: false
+        }
     }
 
     public var isCancelledError: Bool {

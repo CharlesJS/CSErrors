@@ -1,4 +1,4 @@
-// swift-tools-version:6.1
+// swift-tools-version:6.2
 
 import PackageDescription
 
@@ -20,11 +20,15 @@ let package = Package(
     traits: [
         "Foundation"
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-system", from: "1.6.1"),
+    ],
     targets: [
         .target(
             name: "CSErrors",
-            dependencies: []
+            dependencies: [
+                .product(name: "SystemPackage", package: "swift-system", condition: .when(platforms: [.linux]))
+            ]
         ),
         .testTarget(
             name: "CSErrorsTests",
