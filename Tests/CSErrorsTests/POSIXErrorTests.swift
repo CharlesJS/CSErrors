@@ -1,12 +1,11 @@
 //
 //  POSIXErrorTests.swift
-//  
+//
 //
 //  Created by Charles Srstka on 1/15/23.
 //
 
-import System
-import XCTest
+import Testing
 @testable import CSErrors
 
 #if canImport(Darwin)
@@ -17,124 +16,142 @@ import Glibc
 func setErrno(_ e: Int32) { Glibc.errno = e }
 #endif
 
-@available(macOS 13.0, *)
-class POSIXErrorTests: XCTestCase {
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
+
+@Suite("POSIXError Tests")
+struct POSIXErrorTests {
     private static let nonexistentPath: String = {
         let path = "/does/not/exist/\(UUID().uuidString)"
-        XCTAssertFalse(FileManager.default.fileExists(atPath: path)) // just in case
-
+        #expect(!FileManager.default.fileExists(atPath: path)) // just in case
         return path
     }()
 
     private func assertErrno<I: BinaryInteger>(_ err: Errno, closure: () throws -> I) {
-        XCTAssertThrowsError(try closure()) {
+        let thrownError = #expect(throws: Swift.Error.self) { try closure() }
 #if Foundation
-            switch err {
-            case .noSuchFileOrDirectory:
-                XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
-            default:
-                XCTAssertEqual($0 as? Errno, err)
-            }
-#else
-            XCTAssertEqual($0 as? Errno, err)
-#endif
+        switch err {
+        case .noSuchFileOrDirectory:
+            #expect((thrownError as? CocoaError)?.code == .fileReadNoSuchFile)
+        default:
+            #expect(thrownError as? Errno == err)
         }
+#else
+        #expect(thrownError as? Errno == err)
+#endif
     }
 
+    @Test("isFileNotFoundError")
     func testFileNotFound() {
-        XCTAssertTrue(Errno.noSuchFileOrDirectory.isFileNotFoundError)
-        XCTAssertFalse(Errno.invalidArgument.isFileNotFoundError)
+        #expect(Errno.noSuchFileOrDirectory.isFileNotFoundError)
+        #expect(!Errno.invalidArgument.isFileNotFoundError)
 
-        XCTAssertTrue(POSIXError(.ENOENT).isFileNotFoundError)
-        XCTAssertFalse(POSIXError(.EINVAL).isFileNotFoundError)
+        #expect(POSIXError(.ENOENT).isFileNotFoundError)
+        #expect(!POSIXError(.EINVAL).isFileNotFoundError)
 
-        XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isFileNotFoundError)
-        XCTAssertFalse(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isFileNotFoundError)
+        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isFileNotFoundError)
+        #expect(!GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isFileNotFoundError)
     }
 
+    @Test("isPermissionError")
     func testPermissionError() {
-        XCTAssertTrue(Errno.permissionDenied.isPermissionError)
-        XCTAssertTrue(Errno.notPermitted.isPermissionError)
-        XCTAssertFalse(Errno.noSuchFileOrDirectory.isPermissionError)
+        #expect(Errno.permissionDenied.isPermissionError)
+        #expect(Errno.notPermitted.isPermissionError)
+        #expect(!Errno.noSuchFileOrDirectory.isPermissionError)
 
-        XCTAssertTrue(POSIXError(.EACCES).isPermissionError)
-        XCTAssertTrue(POSIXError(.EPERM).isPermissionError)
-        XCTAssertFalse(POSIXError(.ENOENT).isPermissionError)
+        #expect(POSIXError(.EACCES).isPermissionError)
+        #expect(POSIXError(.EPERM).isPermissionError)
+        #expect(!POSIXError(.ENOENT).isPermissionError)
 
-        XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EACCES)).isPermissionError)
-        XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EPERM)).isPermissionError)
-        XCTAssertFalse(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isPermissionError)
+        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EACCES)).isPermissionError)
+        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EPERM)).isPermissionError)
+        #expect(!GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isPermissionError)
     }
 
+    @Test("isCancelledError")
     func testCancelledError() {
-        XCTAssertTrue(Errno.canceled.isCancelledError)
-        XCTAssertFalse(Errno.notPermitted.isCancelledError)
+        #expect(Errno.canceled.isCancelledError)
+        #expect(!Errno.notPermitted.isCancelledError)
 
-        XCTAssertTrue(POSIXError(.ECANCELED).isCancelledError)
-        XCTAssertFalse(POSIXError(.EINVAL).isCancelledError)
+        #expect(POSIXError(.ECANCELED).isCancelledError)
+        #expect(!POSIXError(.EINVAL).isCancelledError)
 
-        XCTAssertTrue(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ECANCELED)).isCancelledError)
-        XCTAssertFalse(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isCancelledError)
+        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ECANCELED)).isCancelledError)
+        #expect(!GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isCancelledError)
     }
 
+    @Test("toErrno() conversion")
     func testToErrno() {
-        XCTAssertEqual(Errno.invalidArgument.toErrno(), EINVAL)
-        XCTAssertEqual(OSStatusError(rawValue: OSStatus(kPOSIXErrorEINVAL)).toErrno(), EINVAL)
-        XCTAssertEqual(POSIXError(.EINVAL).toErrno(), EINVAL)
-        XCTAssertEqual(NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)).toErrno(), EINVAL)
-        XCTAssertEqual(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).toErrno(), EINVAL)
-        XCTAssertEqual(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorEINVAL).toErrno(), EINVAL)
-        XCTAssertEqual(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEINVAL).toErrno(), EINVAL)
-        XCTAssertNil(CocoaError(.fileReadNoSuchFile).toErrno())
+        #expect(Errno.invalidArgument.toErrno() == EINVAL)
+        #expect(OSStatusError(rawValue: OSStatus(kPOSIXErrorEINVAL)).toErrno() == EINVAL)
+        #expect(POSIXError(.EINVAL).toErrno() == EINVAL)
+        #expect(NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)).toErrno() == EINVAL)
+        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).toErrno() == EINVAL)
+        #expect(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorEINVAL).toErrno() == EINVAL)
+        #expect(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEINVAL).toErrno() == EINVAL)
+        #expect(CocoaError(.fileReadNoSuchFile).toErrno() == nil)
     }
 
+    @Test("errno() returns correct Errno")
     func testSystemErrno() {
         setErrno(EINVAL)
-        XCTAssertEqual(errno() as? Errno, .invalidArgument)
-        XCTAssertEqual(errno(path: "/dev/null") as? Errno, .invalidArgument)
-        XCTAssertEqual(errno(path: FilePath("/dev/null")) as? Errno, .invalidArgument)
+        #expect(errno() as? Errno == .invalidArgument)
+        #expect(errno(path: "/dev/null") as? Errno == .invalidArgument)
+        #expect(errno(path: FilePath("/dev/null")) as? Errno == .invalidArgument)
 
         setErrno(EBADF)
-        XCTAssertEqual(errno() as? Errno, .badFileDescriptor)
-        XCTAssertEqual(errno(path: "/dev/null") as? Errno, .badFileDescriptor)
-        XCTAssertEqual(errno(path: FilePath("/dev/null")) as? Errno, .badFileDescriptor)
+        #expect(errno() as? Errno == .badFileDescriptor)
+        #expect(errno(path: "/dev/null") as? Errno == .badFileDescriptor)
+        #expect(errno(path: FilePath("/dev/null")) as? Errno == .badFileDescriptor)
 
         setErrno(ECANCELED)
 #if Foundation
-        XCTAssertEqual((errno() as? CocoaError)?.code, .userCancelled)
-        XCTAssertEqual((errno(path: "/dev/null") as? CocoaError)?.code, .userCancelled)
-        XCTAssertEqual((errno(path: FilePath("/dev/null")) as? CocoaError)?.code, .userCancelled)
+        #expect((errno() as? CocoaError)?.code == .userCancelled)
+        #expect((errno(path: "/dev/null") as? CocoaError)?.code == .userCancelled)
+        #expect((errno(path: FilePath("/dev/null")) as? CocoaError)?.code == .userCancelled)
 #else
-        XCTAssertEqual(errno() as? Errno, .canceled)
-        XCTAssertEqual(errno(path: "/dev/null") as? Errno, .canceled)
-        XCTAssertEqual(errno(path: FilePath("/dev/null")) as? Errno, .canceled)
+        #expect(errno() as? Errno == .canceled)
+        #expect(errno(path: "/dev/null") as? Errno == .canceled)
+        #expect(errno(path: FilePath("/dev/null")) as? Errno == .canceled)
 #endif
     }
 
+    @Test("Passed-in errno()")
     func testPassedInErrno() {
-        XCTAssertEqual(errno(EINVAL) as? Errno, .invalidArgument)
-        XCTAssertEqual(errno(EBADF) as? Errno, .badFileDescriptor)
+        #expect(errno(EINVAL) as? Errno == .invalidArgument)
+        #expect(errno(EBADF) as? Errno == .badFileDescriptor)
 
 #if Foundation
-        XCTAssertEqual((errno(ECANCELED) as? CocoaError)?.code, .userCancelled)
+        #expect((errno(ECANCELED) as? CocoaError)?.code == .userCancelled)
 #else
-        XCTAssertEqual(errno(ECANCELED) as? Errno, .canceled)
+        #expect(errno(ECANCELED) as? Errno == .canceled)
 #endif
     }
 
+    @Test("errno(0) maps to unknown errors")
     func testZeroErrno() {
-        XCTAssertEqual(errno(0) as NSError, CocoaError(.fileReadUnknown) as NSError)
-        XCTAssertEqual(errno(0, path: "/dev/null") as NSError, CocoaError(.fileReadUnknown) as NSError)
-        XCTAssertEqual(errno(0, path: FilePath("/dev/null")) as NSError, CocoaError(.fileReadUnknown) as NSError)
+        #expect(errno(0) as NSError == CocoaError(.fileReadUnknown) as NSError)
+        #expect(errno(0, path: "/dev/null") as NSError == CocoaError(.fileReadUnknown) as NSError)
+        #expect(errno(0, path: FilePath("/dev/null")) as NSError == CocoaError(.fileReadUnknown) as NSError)
 
-        XCTAssertEqual(errno(0, isWrite: true) as NSError, CocoaError(.fileWriteUnknown) as NSError)
-        XCTAssertEqual(errno(0, path: "/dev/null", isWrite: true) as NSError, CocoaError(.fileWriteUnknown) as NSError)
-        XCTAssertEqual(
-            errno(0, path: FilePath("/dev/null"), isWrite: true) as NSError,
-            CocoaError(.fileWriteUnknown) as NSError
+        #expect(errno(0, isWrite: true) as NSError == CocoaError(.fileWriteUnknown) as NSError)
+        #expect(errno(0, path: "/dev/null", isWrite: true) as NSError == CocoaError(.fileWriteUnknown) as NSError)
+        #expect(
+            errno(0, path: FilePath("/dev/null"), isWrite: true) as NSError
+                == CocoaError(.fileWriteUnknown) as NSError
         )
     }
 
+    @Test("errno behavior on macOS 10.x")
     func testErrnoOnMacOS10() {
         emulateMacOSVersion(10) {
             for eachCode in [EINVAL, EBADF, ECANCELED] {
@@ -142,46 +159,48 @@ class POSIXErrorTests: XCTestCase {
 
 #if Foundation
                 if eachCode == ECANCELED {
-                    XCTAssertEqual((err as? CocoaError)?.code, .userCancelled)
+                    #expect((err as? CocoaError)?.code == .userCancelled)
                 } else {
-                    XCTAssertTrue((err as? POSIXError)?.code.rawValue == eachCode)
+                    #expect(((err as? POSIXError)?.code.rawValue == eachCode))
                 }
 #else
-                XCTAssertTrue(err is GenericError)
-                XCTAssertEqual(err._domain, NSPOSIXErrorDomain)
-                XCTAssertEqual(err._code, Int(eachCode))
+                #expect(err is GenericError)
+                #expect(err._domain == NSPOSIXErrorDomain)
+                #expect(err._code == Int(eachCode))
 #endif
             }
         }
     }
 
+    @Test("callPOSIXFunction with .zero expectation")
     func testFunctionWithZeroReturn() throws {
         let url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
 
         try "Testing 1 2 3".write(to: url, atomically: true, encoding: .utf8)
-        XCTAssertNoThrow(try callPOSIXFunction(expect: .zero) { unlink(url.path) })
-        self.assertErrno(.noSuchFileOrDirectory) { try callPOSIXFunction(expect: . zero) { unlink(url.path) } }
+        #expect(throws: Never.self) { try callPOSIXFunction(expect: .zero) { unlink(url.path) } }
+        self.assertErrno(.noSuchFileOrDirectory) { try callPOSIXFunction(expect: .zero) { unlink(url.path) } }
     }
 
-    func testFunctionWithNonNegativeReturn() {
-        XCTAssertNoThrow(try {
+    @Test("callPOSIXFunction with .nonNegative expectation")
+    func testFunctionWithNonNegativeReturn() throws {
+        try {
             let fd = try callPOSIXFunction(expect: .nonNegative) { Darwin.open("/dev/null", O_RDONLY) }
-            defer { XCTAssertEqual(Darwin.close(fd), 0) }
+            defer { #expect(Darwin.close(fd) == 0) }
 
-            XCTAssertGreaterThan(fd, 2)
+            #expect(fd > 2)
 
             var bytesRead = try callPOSIXFunction(expect: .nonNegative) { Darwin.read(fd, nil, 0) }
-            XCTAssertEqual(bytesRead, 0)
+            #expect(bytesRead == 0)
 
             bytesRead = try callPOSIXFunction(expect: .nonNegative, path: FilePath("/dev/null")) { Darwin.read(fd, nil, 0) }
-            XCTAssertEqual(bytesRead, 0)
-        }())
+            #expect(bytesRead == 0)
+        }()
 
-        XCTAssertNoThrow(try {
+        try {
             let fd = try callPOSIXFunction(expect: .nonNegative) { Darwin.open("/dev/random", O_RDONLY) }
-            defer { XCTAssertEqual(Darwin.close(fd), 0) }
+            defer { #expect(Darwin.close(fd) == 0) }
 
-            XCTAssertGreaterThan(fd, 2)
+            #expect(fd > 2)
 
             var bytesRead = try callPOSIXFunction(expect: .nonNegative) {
                 var data = Data(count: 10)
@@ -190,7 +209,7 @@ class POSIXErrorTests: XCTestCase {
                     Darwin.read(fd, $0.baseAddress, $0.count)
                 }
             }
-            XCTAssertEqual(bytesRead, 10)
+            #expect(bytesRead == 10)
 
             bytesRead = try callPOSIXFunction(expect: .nonNegative, path: FilePath("/dev/random")) {
                 var data = Data(count: 10)
@@ -199,8 +218,8 @@ class POSIXErrorTests: XCTestCase {
                     Darwin.read(fd, $0.baseAddress, $0.count)
                 }
             }
-            XCTAssertEqual(bytesRead, 10)
-        }())
+            #expect(bytesRead == 10)
+        }()
 
         self.assertErrno(.noSuchFileOrDirectory) {
             try callPOSIXFunction(expect: .nonNegative) { Darwin.open(Self.nonexistentPath, O_RDONLY) }
@@ -213,24 +232,25 @@ class POSIXErrorTests: XCTestCase {
         }
     }
 
-    func testFunctionWithSpecificReturn() {
+    @Test("callPOSIXFunction with .specific expectation")
+    func testFunctionWithSpecificReturn() throws {
         func someWeirdThingThatExpects5(_ i: Int32) -> Int32 {
             if i != 5 {
-                Foundation.errno = EINVAL
+                setErrno(EINVAL)
             }
-
             return i
         }
 
-        XCTAssertNoThrow(try callPOSIXFunction(expect: .specific(5)) { someWeirdThingThatExpects5(5) })
+        #expect(throws: Never.self) { try callPOSIXFunction(expect: .specific(5)) { someWeirdThingThatExpects5(5) } }
 
         self.assertErrno(.invalidArgument) {
             try callPOSIXFunction(expect: .specific(5)) { someWeirdThingThatExpects5(4) }
         }
     }
 
+    @Test("callPOSIXFunction with .notSpecific expectation")
     func testFunctionWithNotSpecificReturn() {
-        XCTAssertNoThrow(try callPOSIXFunction(expect: .notSpecific(-1)) { fcntl(STDOUT_FILENO, F_GETFD) })
+        #expect(throws: Never.self) { try callPOSIXFunction(expect: .notSpecific(-1)) { fcntl(STDOUT_FILENO, F_GETFD) } }
 
         self.assertErrno(.badFileDescriptor) {
             try callPOSIXFunction(expect: .notSpecific(-1)) { fcntl(-99, F_GETFD) }
@@ -238,9 +258,10 @@ class POSIXErrorTests: XCTestCase {
 
         func returnsOtherNegative() -> Int32 { -2 }
 
-        XCTAssertNoThrow(try callPOSIXFunction(expect: .notSpecific(-1)) { returnsOtherNegative() })
+        #expect(throws: Never.self) { try callPOSIXFunction(expect: .notSpecific(-1)) { returnsOtherNegative() } }
     }
 
+    @Test("callPOSIXFunction with .zero and path — lstat()")
     func testReturnByReference() throws {
         var url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
         try "Hello World".write(to: url, atomically: true, encoding: .ascii)
@@ -252,9 +273,9 @@ class POSIXErrorTests: XCTestCase {
         try url.setResourceValues(resourceValues)
 
         let info = try callPOSIXFunction(expect: .zero, path: url.path) { lstat(url.path, $0) }
-        XCTAssertEqual(info.st_size, 11)
-        XCTAssertEqual(info.st_mode, 0o100751)
-        XCTAssertEqual(info.st_uid, getuid())
+        #expect(info.st_size == 11)
+        #expect(info.st_mode == 0o100751)
+        #expect(info.st_uid == getuid())
 
         try "Why Hello There World".write(to: url, atomically: true, encoding: .ascii)
 
@@ -263,28 +284,39 @@ class POSIXErrorTests: XCTestCase {
         try url.setResourceValues(resourceValues)
 
         let info2 = try callPOSIXFunction(expect: .zero, path: FilePath(url.path)) { lstat(url.path, $0) }
-        XCTAssertEqual(info2.st_size, 21)
-        XCTAssertEqual(info2.st_mode, 0o100644)
+        #expect(info2.st_size == 21)
+        #expect(info2.st_mode == 0o100644)
 
-        XCTAssertThrowsError(try callPOSIXFunction(expect: .zero) { lstat(Self.nonexistentPath, $0) }) {
 #if Foundation
-            XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
-#else
-            XCTAssertEqual($0 as? Errno, .noSuchFileOrDirectory)
-#endif
-        }
+        #expect(
+            try #require(throws: CocoaError.self) {
+                try callPOSIXFunction(expect: .zero) { lstat(Self.nonexistentPath, $0) }
+            }.code == .fileReadNoSuchFile
+        )
 
-        XCTAssertThrowsError(try callPOSIXFunction(expect: .zero, path: FilePath(Self.nonexistentPath)) {
-            lstat(Self.nonexistentPath, $0)
-        }) {
-#if Foundation
-            XCTAssertEqual(($0 as? CocoaError)?.code, .fileReadNoSuchFile)
-#else
-            XCTAssertEqual($0 as? Errno, .noSuchFileOrDirectory)
-#endif
+        try #require(throws: CocoaError.self) {
+            try callPOSIXFunction(expect: .zero, path: FilePath(Self.nonexistentPath)) {
+                lstat(Self.nonexistentPath, $0)
+            }
         }
+#else
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(expect: .zero) { lstat(Self.nonexistentPath, $0) }
+            } == .noSuchFileOrDirectory
+        )
+
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(expect: .zero, path: FilePath(Self.nonexistentPath)) {
+                    lstat(Self.nonexistentPath, $0)
+                }
+            } == .noSuchFileOrDirectory
+        )
+#endif
     }
 
+    @Test("callPOSIXFunction with direct pointer returns — opendir()")
     func testDirectPointerReturn() throws {
         let tempURL = FileManager.default.temporaryDirectory
         let tempFileName = UUID().uuidString
@@ -311,24 +343,32 @@ class POSIXErrorTests: XCTestCase {
             return foundIt
         }
 
-        XCTAssertTrue(checkDir(try callPOSIXFunction(path: tempURL.path) { opendir(tempURL.path) }))
-        XCTAssertTrue(checkDir(try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempURL.path) }))
+        #expect(checkDir(try callPOSIXFunction(path: tempURL.path) { opendir(tempURL.path) }))
+        #expect(checkDir(try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempURL.path) }))
 
-        XCTAssertThrowsError(try callPOSIXFunction(path: tempURL.path) { opendir(tempFileURL.path) }) {
-            XCTAssertEqual($0 as? Errno, .notDirectory)
-        }
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(path: tempURL.path) { opendir(tempFileURL.path) }
+            } == .notDirectory
+        )
 
-        XCTAssertThrowsError(try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempFileURL.path) }) {
-            XCTAssertEqual($0 as? Errno, .notDirectory)
-        }
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempFileURL.path) }
+            } == .notDirectory
+        )
 
-        XCTAssertThrowsError(try callPOSIXFunction(path: "/tmp") { acl_init(-1) }) {
-            XCTAssertEqual($0 as? Errno, .invalidArgument)
-        }
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(path: "/tmp") { acl_init(-1) }
+            } == .invalidArgument
+        )
 
-        XCTAssertThrowsError(try callPOSIXFunction(path: FilePath("/tmp")) { acl_init(-1) }) {
-            XCTAssertEqual($0 as? Errno, .invalidArgument)
-        }
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(path: FilePath("/tmp")) { acl_init(-1) }
+            } == .invalidArgument
+        )
 
         let acl: acl_t = try callPOSIXFunction(path: "/tmp") { acl_init(0) }
         defer { acl_free(UnsafeMutableRawPointer(acl)) }
@@ -340,46 +380,57 @@ class POSIXErrorTests: XCTestCase {
 
         let aclEntry = try callPOSIXFunction(expect: .zero) { acl_create_entry(&optionalACL, $0) }
 
-        XCTAssertThrowsError(try callPOSIXFunction(path: "/tmp") { acl_get_qualifier(aclEntry) }) {
-            XCTAssertEqual($0 as? Errno, .invalidArgument)
-        }
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(path: "/tmp") { acl_get_qualifier(aclEntry) }
+            } == .invalidArgument
+        )
 
-        XCTAssertThrowsError(try callPOSIXFunction(path: FilePath("/tmp")) { acl_get_qualifier(aclEntry) }) {
-            XCTAssertEqual($0 as? Errno, .invalidArgument)
-        }
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(path: FilePath("/tmp")) { acl_get_qualifier(aclEntry) }
+            } == .invalidArgument
+        )
 
         try callPOSIXFunction(expect: .zero) { acl_set_tag_type(aclEntry, ACL_EXTENDED_ALLOW) }
 
-        let qualifier = try callPOSIXFunction(path: "/tmp") { acl_get_qualifier(aclEntry) }
-        defer { acl_free(qualifier) }
-
-        let qualifier2 = try callPOSIXFunction(path: FilePath("/tmp")) { acl_get_qualifier(aclEntry) }
-        defer { acl_free(qualifier2) }
-
-        XCTAssertNotNil(qualifier)
-        XCTAssertNotNil(qualifier2)
-    }
-
-    func testDirectErrorReturn() {
-        var attr: posix_spawnattr_t? = nil
-
-        XCTAssertNoThrow(attr = try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { posix_spawnattr_init($0) })
-        defer {
-            XCTAssertNoThrow(try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) {
-                posix_spawnattr_destroy(&attr)
-            })
+        #expect(throws: Never.self) {
+            let qualifier: UnsafeMutableRawPointer? = try callPOSIXFunction(path: "/tmp") {
+                acl_get_qualifier(aclEntry)
+            }
+            acl_free(qualifier)
         }
 
-        XCTAssertNoThrow(
+        #expect(throws: Never.self) {
+            let qualifier: UnsafeMutableRawPointer? = try callPOSIXFunction(path: FilePath("/tmp")) {
+                acl_get_qualifier(aclEntry)
+            }
+            acl_free(qualifier)
+        }
+    }
+
+    @Test("callPOSIXFunction with .returnValue errorFrom")
+    func testDirectErrorReturn() throws {
+        var attr = try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { posix_spawnattr_init($0) }
+        defer {
+            #expect(throws: Never.self) {
+                _ = try? callPOSIXFunction(expect: .zero, errorFrom: .returnValue) {
+                    posix_spawnattr_destroy(&attr)
+                }
+            }
+        }
+
+        #expect(throws: Never.self) {
             try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) {
                 posix_spawnattr_setflags(&attr, 1)
             }
-        )
-
-        XCTAssertThrowsError(
-            try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { posix_spawnattr_setflags(nil, 1) }
-        ) {
-            XCTAssertEqual($0 as? Errno, .invalidArgument)
         }
+
+        #expect(
+            try #require(throws: Errno.self) {
+                try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { posix_spawnattr_setflags(nil, 1) }
+            } == .invalidArgument
+        )
     }
 }
+

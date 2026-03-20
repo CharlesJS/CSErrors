@@ -1,6 +1,6 @@
 //
 //  URLErrorTests.swift
-//  
+//
 //
 //  Created by Charles Srstka on 1/16/23.
 //
@@ -8,11 +8,14 @@
 #if Foundation
 
 import CSErrors
+import Foundation
 import System
-import XCTest
+import Testing
 
-class URLErrorTests: XCTestCase {
-    func testURLErrorMetadata() {
+@Suite("URLError Tests")
+struct URLErrorTests {
+    @Test("URLError metadata")
+    func testURLErrormetadata() {
         let url = URL(string: "https://www.terribleurl.com/who/made/this/garbage")!
 
         let err = URLError(
@@ -29,35 +32,37 @@ class URLErrorTests: XCTestCase {
             custom: ["foo": "bar"]
         )
 
-        XCTAssertEqual(err.code, .badURL)
-        XCTAssertEqual(err.localizedDescription, "URL is bad")
-        XCTAssertEqual(err.underlyingError as? Errno, Errno.badFileTypeOrFormat)
+        #expect(err.code == .badURL)
+        #expect(err.localizedDescription == "URL is bad")
+        #expect(err.underlyingError as? Errno == Errno.badFileTypeOrFormat)
 
         let userInfo = err.userInfo
-        XCTAssertEqual(userInfo[NSLocalizedFailureReasonErrorKey] as? String, "I hate this URL")
-        XCTAssertEqual(userInfo[NSLocalizedRecoverySuggestionErrorKey] as? String, "Burn it with fire")
-        XCTAssertEqual(userInfo[NSLocalizedRecoveryOptionsErrorKey] as? [String], ["Go somewhere else", "Fret"])
-        XCTAssertEqual(userInfo[NSRecoveryAttempterErrorKey] as? String, "Complain to Webmaster")
-        XCTAssertEqual(userInfo[NSHelpAnchorErrorKey] as? String, "Haaaaalp")
-        XCTAssertEqual(userInfo[NSStringEncodingErrorKey] as? UInt, String.Encoding.utf8.rawValue)
-        XCTAssertEqual(userInfo[NSURLErrorKey] as? URL, url)
-        XCTAssertNil(userInfo[NSFilePathErrorKey])
-        XCTAssertEqual(userInfo["foo"] as? String, "bar")
+        #expect(userInfo[NSLocalizedFailureReasonErrorKey] as? String == "I hate this URL")
+        #expect(userInfo[NSLocalizedRecoverySuggestionErrorKey] as? String == "Burn it with fire")
+        #expect(userInfo[NSLocalizedRecoveryOptionsErrorKey] as? [String] == ["Go somewhere else", "Fret"])
+        #expect(userInfo[NSRecoveryAttempterErrorKey] as? String == "Complain to Webmaster")
+        #expect(userInfo[NSHelpAnchorErrorKey] as? String == "Haaaaalp")
+        #expect(userInfo[NSStringEncodingErrorKey] as? UInt == String.Encoding.utf8.rawValue)
+        #expect(userInfo[NSURLErrorKey] as? URL == url)
+        #expect(userInfo[NSFilePathErrorKey] == nil)
+        #expect(userInfo["foo"] as? String == "bar")
     }
 
+    @Test("Protocol compliance")
     func testProtocolCompliance() {
-        XCTAssertTrue(URLError(.fileDoesNotExist).isFileNotFoundError)
-        XCTAssertFalse(URLError(.fileDoesNotExist).isPermissionError)
+        #expect(URLError(.fileDoesNotExist).isFileNotFoundError)
+        #expect(!URLError(.fileDoesNotExist).isPermissionError)
 
-        XCTAssertTrue(URLError(.noPermissionsToReadFile).isPermissionError)
-        XCTAssertFalse(URLError(.noPermissionsToReadFile).isCancelledError)
+        #expect(URLError(.noPermissionsToReadFile).isPermissionError)
+        #expect(!URLError(.noPermissionsToReadFile).isCancelledError)
 
-        XCTAssertTrue(URLError(.cancelled).isCancelledError)
-        XCTAssertFalse(URLError(.cancelled).isFileNotFoundError)
+        #expect(URLError(.cancelled).isCancelledError)
+        #expect(!URLError(.cancelled).isFileNotFoundError)
 
-        XCTAssertTrue(URLError(.userCancelledAuthentication).isCancelledError)
-        XCTAssertFalse(URLError(.userCancelledAuthentication).isPermissionError)
+        #expect(URLError(.userCancelledAuthentication).isCancelledError)
+        #expect(!URLError(.userCancelledAuthentication).isPermissionError)
     }
 }
 
 #endif
+
