@@ -20,9 +20,7 @@ let package = Package(
     traits: [
         "Foundation"
     ],
-    dependencies: [
-        .package(url: "https://github.com/mattgallagher/CwlPreconditionTesting.git", from: Version("2.0.0")),
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "CSErrors",
@@ -30,7 +28,7 @@ let package = Package(
         ),
         .testTarget(
             name: "CSErrorsTests",
-            dependencies: ["CSErrors", "CwlPreconditionTesting"]
+            dependencies: ["CSErrors"]
         ),
     ]
 )

@@ -8,11 +8,14 @@
 #if Foundation
 
 import CSErrors
+import Foundation
 import System
-import XCTest
+import Testing
 
-@available(macOS 13.0, *)
-class CocoaErrorTests: XCTestCase {
+@Suite("CocoaError Tests")
+struct CocoaErrorTests {
+
+    @Test("CocoaError with path works correctly")
     func testCocoaErrorWithPath() {
         let err = CocoaError(
             .fileNoSuchFile,
@@ -22,14 +25,15 @@ class CocoaErrorTests: XCTestCase {
             path: FilePath("/path/to/file")
         )
 
-        XCTAssertEqual(err.code, .fileNoSuchFile)
-        XCTAssertEqual(err.errorCode, CocoaError.Code.fileNoSuchFile.rawValue)
-        XCTAssertEqual(err.localizedDescription, "no can do")
-        XCTAssertEqual(err.userInfo[NSLocalizedFailureReasonErrorKey] as? String, "i don't wanna")
-        XCTAssertEqual(err.stringEncoding, .macOSRoman)
-        XCTAssertEqual(err.url, URL(filePath: "/path/to/file"))
+        #expect(err.code == .fileNoSuchFile)
+        #expect(err.errorCode == CocoaError.Code.fileNoSuchFile.rawValue)
+        #expect(err.localizedDescription == "no can do")
+        #expect((err.userInfo[NSLocalizedFailureReasonErrorKey] as? String) == "i don't wanna")
+        #expect(err.stringEncoding == .macOSRoman)
+        #expect(err.url == URL(filePath: "/path/to/file"))
     }
 
+    @Test("CocoaError with URL works correctly")
     func testCocoaErrorWithURL() {
         let err = CocoaError(
             .fileNoSuchFile,
@@ -39,30 +43,33 @@ class CocoaErrorTests: XCTestCase {
             url: URL(filePath: "/path/to/file")
         )
 
-        XCTAssertEqual(err.code, .fileNoSuchFile)
-        XCTAssertEqual(err.errorCode, CocoaError.Code.fileNoSuchFile.rawValue)
-        XCTAssertEqual(err.localizedDescription, "no can do")
-        XCTAssertEqual(err.userInfo[NSLocalizedFailureReasonErrorKey] as? String, "i don't wanna")
-        XCTAssertEqual(err.stringEncoding, .macOSRoman)
-        XCTAssertEqual(err.url, URL(filePath: "/path/to/file"))
+        #expect(err.code == .fileNoSuchFile)
+        #expect(err.errorCode == CocoaError.Code.fileNoSuchFile.rawValue)
+        #expect(err.localizedDescription == "no can do")
+        #expect((err.userInfo[NSLocalizedFailureReasonErrorKey] as? String) == "i don't wanna")
+        #expect(err.stringEncoding == .macOSRoman)
+        #expect(err.url == URL(filePath: "/path/to/file"))
     }
 
+    @Test("CocoaError identifies file not found errors")
     func testFileNotFound() {
-        XCTAssertTrue(CocoaError(.fileNoSuchFile).isFileNotFoundError)
-        XCTAssertTrue(CocoaError(.fileReadNoSuchFile).isFileNotFoundError)
-        XCTAssertTrue(CocoaError(.ubiquitousFileUnavailable).isFileNotFoundError)
-        XCTAssertFalse(CocoaError(.fileWriteNoPermission).isFileNotFoundError)
+        #expect(CocoaError(.fileNoSuchFile).isFileNotFoundError)
+        #expect(CocoaError(.fileReadNoSuchFile).isFileNotFoundError)
+        #expect(CocoaError(.ubiquitousFileUnavailable).isFileNotFoundError)
+        #expect(!CocoaError(.fileWriteNoPermission).isFileNotFoundError)
     }
 
+    @Test("CocoaError identifies permission errors")
     func testPermissionError() {
-        XCTAssertTrue(CocoaError(.fileReadNoPermission).isPermissionError)
-        XCTAssertTrue(CocoaError(.fileWriteNoPermission).isPermissionError)
-        XCTAssertFalse(CocoaError(.fileNoSuchFile).isPermissionError)
+        #expect(CocoaError(.fileReadNoPermission).isPermissionError)
+        #expect(CocoaError(.fileWriteNoPermission).isPermissionError)
+        #expect(!CocoaError(.fileNoSuchFile).isPermissionError)
     }
 
+    @Test("CocoaError identifies cancelled errors")
     func testCancelledError() {
-        XCTAssertTrue(CocoaError(.userCancelled).isCancelledError)
-        XCTAssertFalse(CocoaError(.fileNoSuchFile).isCancelledError)
+        #expect(CocoaError(.userCancelled).isCancelledError)
+        #expect(!CocoaError(.fileNoSuchFile).isCancelledError)
     }
 }
 

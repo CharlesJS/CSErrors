@@ -8,14 +8,13 @@
 #if DEBUG
 // All of these functions are to be used during testing only!
 func emulateMacOSVersion(_ vers: Int, closure: () throws -> ()) rethrows {
-    defer { emulatedVersion = Int.max }
-    emulatedVersion = vers
-
-    try closure()
+    try emulatedVersion.withValue(vers) {
+        try closure()
+    }
 }
 
-nonisolated(unsafe) private var emulatedVersion = Int.max
-internal func versionCheck(_ vers: Int) -> Bool { emulatedVersion >= vers }
+private let emulatedVersion = TaskLocal(wrappedValue: Int.max)
+internal func versionCheck(_ vers: Int) -> Bool { emulatedVersion.get() >= vers }
 #else
 @inline(__always) internal func versionCheck(_ vers: Int) -> Bool { true }
 #endif

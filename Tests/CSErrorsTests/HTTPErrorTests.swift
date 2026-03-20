@@ -5,43 +5,49 @@
 //  Created by Charles Srstka on 1/12/23.
 //
 
-import XCTest
 import CSErrors
+import Foundation
+import Testing
 
-class HTTPErrorTests: XCTestCase {
+@Suite("HTTPError Tests")
+struct HTTPErrorTests {
+
+    @Test("HTTPError properties are set correctly for status codes 400–599")
     func testErrorProperties() {
-        for statusCode in (400..<600) {
+        for statusCode in 400..<600 {
             let err = HTTPError(statusCode: statusCode)
 
-            XCTAssertEqual(err.statusCode, statusCode)
-            XCTAssertEqual(err._code, statusCode)
+            #expect(err.statusCode == statusCode)
+            #expect(err._code == statusCode)
+
 #if Foundation
             let reason = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-
-            XCTAssertEqual(err.failureReason, "HTTP \(statusCode) (\(reason))")
-            XCTAssertEqual(err.errorDescription, "HTTP \(statusCode) (\(reason))")
+            #expect(err.failureReason == "HTTP \(statusCode) (\(reason))")
+            #expect(err.errorDescription == "HTTP \(statusCode) (\(reason))")
 #else
-            XCTAssertEqual(err.failureReason, "HTTP \(statusCode)")
-            XCTAssertEqual(err.errorDescription, "HTTP \(statusCode)")
+            #expect(err.failureReason == "HTTP \(statusCode)")
+            #expect(err.errorDescription == "HTTP \(statusCode)")
 #endif
         }
     }
 
+    @Test("HTTPError conforms to error domain predicates")
     func testErrorProtocolConformance() {
-        XCTAssertTrue(HTTPError(statusCode: 404).isFileNotFoundError)
-        XCTAssertFalse(HTTPError(statusCode: 403).isFileNotFoundError)
+        #expect(HTTPError(statusCode: 404).isFileNotFoundError)
+        #expect(!HTTPError(statusCode: 403).isFileNotFoundError)
 
-        XCTAssertTrue(HTTPError(statusCode: 401).isPermissionError)
-        XCTAssertTrue(HTTPError(statusCode: 403).isPermissionError)
-        XCTAssertTrue(HTTPError(statusCode: 407).isPermissionError)
-        XCTAssertFalse(HTTPError(statusCode: 404).isPermissionError)
+        #expect(HTTPError(statusCode: 401).isPermissionError)
+        #expect(HTTPError(statusCode: 403).isPermissionError)
+        #expect(HTTPError(statusCode: 407).isPermissionError)
+        #expect(!HTTPError(statusCode: 404).isPermissionError)
 
-        for statusCode in (400..<600) {
-            XCTAssertFalse(HTTPError(statusCode: statusCode).isCancelledError)
+        for statusCode in 400..<600 {
+            #expect(!HTTPError(statusCode: statusCode).isCancelledError)
         }
     }
 
 #if Foundation
+    @Test("Foundation-specific metadata is correctly populated")
     func testFoundationMetadata() {
         let reasons: [Int : String] = [
             400: "bad request",
@@ -70,15 +76,14 @@ class HTTPErrorTests: XCTestCase {
             505: "unsupported version"
         ]
 
-        for statusCode in (400..<600) {
+        for statusCode in 400..<600 {
             let err = HTTPError(statusCode: statusCode)
-
             let reason = reasons[statusCode] ?? (statusCode < 500 ? "client error" : "server error")
 
-            XCTAssertEqual(err.statusCode, statusCode)
-            XCTAssertEqual(err._code, statusCode)
-            XCTAssertEqual(err.failureReason, "HTTP \(statusCode) (\(reason))")
-            XCTAssertEqual(err.errorDescription, "HTTP \(statusCode) (\(reason))")
+            #expect(err.statusCode == statusCode)
+            #expect(err._code == statusCode)
+            #expect(err.failureReason == "HTTP \(statusCode) (\(reason))")
+            #expect(err.errorDescription == "HTTP \(statusCode) (\(reason))")
         }
     }
 #endif
