@@ -1,0 +1,15 @@
+{
+  "originHash" : "b4bf9c49d7348a285fb3847929caad86cc556e07c6f31c7eb721e40d69d00d8e",
+  "pins" : [
+    {
+      "identity" : "swift-system",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-system",
+      "state" : {
+        "revision" : "7c6ad0fc39d0763e0b699210e4124afd5041c5df",
+        "version" : "1.6.4"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -6,8 +6,13 @@
 //
 
 import CSErrors
-import Foundation
 import Testing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
 
 @Suite("HTTPError Tests")
 struct HTTPErrorTests {
@@ -20,7 +25,7 @@ struct HTTPErrorTests {
             #expect(err.statusCode == statusCode)
             #expect(err._code == statusCode)
 
-#if Foundation
+#if Foundation && canImport(Darwin)
             let reason = HTTPURLResponse.localizedString(forStatusCode: statusCode)
             #expect(err.failureReason == "HTTP \(statusCode) (\(reason))")
             #expect(err.errorDescription == "HTTP \(statusCode) (\(reason))")
@@ -82,8 +87,13 @@ struct HTTPErrorTests {
 
             #expect(err.statusCode == statusCode)
             #expect(err._code == statusCode)
+#if canImport(Darwin)
             #expect(err.failureReason == "HTTP \(statusCode) (\(reason))")
             #expect(err.errorDescription == "HTTP \(statusCode) (\(reason))")
+#else
+            #expect(err.failureReason == "HTTP \(statusCode)")
+            #expect(err.errorDescription == "HTTP \(statusCode)")
+#endif
         }
     }
 #endif

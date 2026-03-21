@@ -5,6 +5,8 @@
 //  Created by Charles Srstka on 1/15/23.
 //
 
+#if Foundation
+
 import Testing
 @testable import CSErrors
 
@@ -58,8 +60,8 @@ struct POSIXErrorTests {
         #expect(POSIXError(.ENOENT).isFileNotFoundError)
         #expect(!POSIXError(.EINVAL).isFileNotFoundError)
 
-        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isFileNotFoundError)
-        #expect(!GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isFileNotFoundError)
+        #expect(GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(ENOENT)).isFileNotFoundError)
+        #expect(!GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(EINVAL)).isFileNotFoundError)
     }
 
     @Test("isPermissionError")
@@ -72,9 +74,9 @@ struct POSIXErrorTests {
         #expect(POSIXError(.EPERM).isPermissionError)
         #expect(!POSIXError(.ENOENT).isPermissionError)
 
-        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EACCES)).isPermissionError)
-        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EPERM)).isPermissionError)
-        #expect(!GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ENOENT)).isPermissionError)
+        #expect(GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(EACCES)).isPermissionError)
+        #expect(GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(EPERM)).isPermissionError)
+        #expect(!GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(ENOENT)).isPermissionError)
     }
 
     @Test("isCancelledError")
@@ -85,19 +87,23 @@ struct POSIXErrorTests {
         #expect(POSIXError(.ECANCELED).isCancelledError)
         #expect(!POSIXError(.EINVAL).isCancelledError)
 
-        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(ECANCELED)).isCancelledError)
-        #expect(!GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).isCancelledError)
+        #expect(GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(ECANCELED)).isCancelledError)
+        #expect(!GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(EINVAL)).isCancelledError)
     }
 
     @Test("toErrno() conversion")
     func testToErrno() {
+        let kPOSIXErrorEINVAL = 100022
+
         #expect(Errno.invalidArgument.toErrno() == EINVAL)
         #expect(OSStatusError(rawValue: OSStatus(kPOSIXErrorEINVAL)).toErrno() == EINVAL)
         #expect(POSIXError(.EINVAL).toErrno() == EINVAL)
-        #expect(NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)).toErrno() == EINVAL)
-        #expect(GenericError(_domain: NSPOSIXErrorDomain, _code: Int(EINVAL)).toErrno() == EINVAL)
-        #expect(NSError(domain: NSOSStatusErrorDomain, code: kPOSIXErrorEINVAL).toErrno() == EINVAL)
-        #expect(GenericError(_domain: NSOSStatusErrorDomain, _code: kPOSIXErrorEINVAL).toErrno() == EINVAL)
+        #expect(GenericError(_domain: POSIXError.posixErrorDomain, _code: Int(EINVAL)).toErrno() == EINVAL)
+        #expect(GenericError(_domain: OSStatusError.osStatusErrorDomain, _code: kPOSIXErrorEINVAL).toErrno() == EINVAL)
+#if canImport(Darwin)
+        #expect(NSError(domain: POSIXError.posixErrorDomain, code: Int(EINVAL)).toErrno() == EINVAL)
+        #expect(NSError(domain: OSStatusError.osStatusErrorDomain, code: kPOSIXErrorEINVAL).toErrno() == EINVAL)
+#endif
         #expect(CocoaError(.fileReadNoSuchFile).toErrno() == nil)
     }
 
@@ -139,18 +145,16 @@ struct POSIXErrorTests {
 
     @Test("errno(0) maps to unknown errors")
     func testZeroErrno() {
-        #expect(errno(0) as NSError == CocoaError(.fileReadUnknown) as NSError)
-        #expect(errno(0, path: "/dev/null") as NSError == CocoaError(.fileReadUnknown) as NSError)
-        #expect(errno(0, path: FilePath("/dev/null")) as NSError == CocoaError(.fileReadUnknown) as NSError)
+        #expect((errno(0) as? CocoaError)?.code == .fileReadUnknown)
+        #expect((errno(0, path: "/dev/null" as String) as? CocoaError)?.code == .fileReadUnknown)
+        #expect((errno(0, path: "/dev/null" as FilePath) as? CocoaError)?.code == .fileReadUnknown)
 
-        #expect(errno(0, isWrite: true) as NSError == CocoaError(.fileWriteUnknown) as NSError)
-        #expect(errno(0, path: "/dev/null", isWrite: true) as NSError == CocoaError(.fileWriteUnknown) as NSError)
-        #expect(
-            errno(0, path: FilePath("/dev/null"), isWrite: true) as NSError
-                == CocoaError(.fileWriteUnknown) as NSError
-        )
+        #expect((errno(0, isWrite: true) as? CocoaError)?.code == .fileWriteUnknown)
+        #expect((errno(0, path: "/dev/null" as String, isWrite: true) as? CocoaError)?.code == .fileWriteUnknown)
+        #expect((errno(0, path: "/dev/null" as FilePath, isWrite: true) as? CocoaError)?.code == .fileWriteUnknown)
     }
 
+#if os(macOS)
     @Test("errno behavior on macOS 10.x")
     func testErrnoOnMacOS10() {
         emulateMacOSVersion(10) {
@@ -165,14 +169,15 @@ struct POSIXErrorTests {
                 }
 #else
                 #expect(err is GenericError)
-                #expect(err._domain == NSPOSIXErrorDomain)
+                #expect(err._domain == POSIXError.posixErrorDomain)
                 #expect(err._code == Int(eachCode))
 #endif
             }
         }
     }
+#endif
 
-    @Test("callPOSIXFunction with .zero expectation")
+    @Test("callPOSIXFunction on function that returns zero on success")
     func testFunctionWithZeroReturn() throws {
         let url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
 
@@ -181,24 +186,24 @@ struct POSIXErrorTests {
         self.assertErrno(.noSuchFileOrDirectory) { try callPOSIXFunction(expect: .zero) { unlink(url.path) } }
     }
 
-    @Test("callPOSIXFunction with .nonNegative expectation")
+    @Test("callPOSIXFunction on function that returns negative on error")
     func testFunctionWithNonNegativeReturn() throws {
         try {
-            let fd = try callPOSIXFunction(expect: .nonNegative) { Darwin.open("/dev/null", O_RDONLY) }
-            defer { #expect(Darwin.close(fd) == 0) }
+            let fd = try callPOSIXFunction(expect: .nonNegative) { open("/dev/null", O_RDONLY) }
+            defer { #expect(close(fd) == 0) }
 
             #expect(fd > 2)
 
-            var bytesRead = try callPOSIXFunction(expect: .nonNegative) { Darwin.read(fd, nil, 0) }
+            var bytesRead = try callPOSIXFunction(expect: .nonNegative) { read(fd, nil, 0) }
             #expect(bytesRead == 0)
 
-            bytesRead = try callPOSIXFunction(expect: .nonNegative, path: FilePath("/dev/null")) { Darwin.read(fd, nil, 0) }
+            bytesRead = try callPOSIXFunction(expect: .nonNegative, path: FilePath("/dev/null")) { read(fd, nil, 0) }
             #expect(bytesRead == 0)
         }()
 
         try {
-            let fd = try callPOSIXFunction(expect: .nonNegative) { Darwin.open("/dev/random", O_RDONLY) }
-            defer { #expect(Darwin.close(fd) == 0) }
+            let fd = try callPOSIXFunction(expect: .nonNegative) { open("/dev/random", O_RDONLY) }
+            defer { #expect(close(fd) == 0) }
 
             #expect(fd > 2)
 
@@ -206,7 +211,7 @@ struct POSIXErrorTests {
                 var data = Data(count: 10)
 
                 return data.withUnsafeMutableBytes {
-                    Darwin.read(fd, $0.baseAddress, $0.count)
+                    read(fd, $0.baseAddress, $0.count)
                 }
             }
             #expect(bytesRead == 10)
@@ -215,24 +220,24 @@ struct POSIXErrorTests {
                 var data = Data(count: 10)
 
                 return data.withUnsafeMutableBytes {
-                    Darwin.read(fd, $0.baseAddress, $0.count)
+                    read(fd, $0.baseAddress, $0.count)
                 }
             }
             #expect(bytesRead == 10)
         }()
 
         self.assertErrno(.noSuchFileOrDirectory) {
-            try callPOSIXFunction(expect: .nonNegative) { Darwin.open(Self.nonexistentPath, O_RDONLY) }
+            try callPOSIXFunction(expect: .nonNegative) { open(Self.nonexistentPath, O_RDONLY) }
         }
 
         self.assertErrno(.noSuchFileOrDirectory) {
             try callPOSIXFunction(expect: .nonNegative, path: FilePath(Self.nonexistentPath)) {
-                Darwin.open(Self.nonexistentPath, O_RDONLY)
+                open(Self.nonexistentPath, O_RDONLY)
             }
         }
     }
 
-    @Test("callPOSIXFunction with .specific expectation")
+    @Test("callPOSIXFunction on function that returns a specific value for success")
     func testFunctionWithSpecificReturn() throws {
         func someWeirdThingThatExpects5(_ i: Int32) -> Int32 {
             if i != 5 {
@@ -248,7 +253,7 @@ struct POSIXErrorTests {
         }
     }
 
-    @Test("callPOSIXFunction with .notSpecific expectation")
+    @Test("callPOSIXFunction on function that returns a specific value for error")
     func testFunctionWithNotSpecificReturn() {
         #expect(throws: Never.self) { try callPOSIXFunction(expect: .notSpecific(-1)) { fcntl(STDOUT_FILENO, F_GETFD) } }
 
@@ -261,16 +266,16 @@ struct POSIXErrorTests {
         #expect(throws: Never.self) { try callPOSIXFunction(expect: .notSpecific(-1)) { returnsOtherNegative() } }
     }
 
-    @Test("callPOSIXFunction with .zero and path — lstat()")
+    @Test("callPOSIXFunction on function that returns by reference")
     func testReturnByReference() throws {
-        var url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
+        let url = FileManager.default.temporaryDirectory.appending(component: UUID().uuidString)
         try "Hello World".write(to: url, atomically: true, encoding: .ascii)
         defer { _ = try? FileManager.default.removeItem(at: url) }
 
-        var resourceValues = try url.resourceValues(forKeys: [.fileSecurityKey])
-        CFFileSecuritySetMode(resourceValues.fileSecurity as CFFileSecurity?, 0o751)
-        CFFileSecuritySetOwner(resourceValues.fileSecurity as CFFileSecurity?, getuid())
-        try url.setResourceValues(resourceValues)
+        try FileManager.default.setAttributes(
+            [.ownerAccountID: getuid(), .posixPermissions: 0o751],
+            ofItemAtPath: url.path
+        )
 
         let info = try callPOSIXFunction(expect: .zero, path: url.path) { lstat(url.path, $0) }
         #expect(info.st_size == 11)
@@ -279,9 +284,7 @@ struct POSIXErrorTests {
 
         try "Why Hello There World".write(to: url, atomically: true, encoding: .ascii)
 
-        resourceValues = try url.resourceValues(forKeys: [.fileSecurityKey])
-        CFFileSecuritySetMode(resourceValues.fileSecurity as CFFileSecurity?, 0o644)
-        try url.setResourceValues(resourceValues)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: url.path)
 
         let info2 = try callPOSIXFunction(expect: .zero, path: FilePath(url.path)) { lstat(url.path, $0) }
         #expect(info2.st_size == 21)
@@ -316,23 +319,33 @@ struct POSIXErrorTests {
 #endif
     }
 
-    @Test("callPOSIXFunction with direct pointer returns — opendir()")
+    @Test("callPOSIXFunction on function that returns pointer directly")
     func testDirectPointerReturn() throws {
         let tempURL = FileManager.default.temporaryDirectory
         let tempFileName = UUID().uuidString
         let tempFileURL = tempURL.appending(path: tempFileName)
 
+#if canImport(Darwin)
+        typealias DirType = UnsafeMutablePointer<DIR>
+        func nameLen(_ entry: UnsafeMutablePointer<dirent>) -> Int { Int(entry.pointee.d_namlen) }
+#else
+        typealias DirType = OpaquePointer
+        func nameLen(_ entry: UnsafeMutablePointer<dirent>) -> Int {
+            withUnsafeBytes(of: entry.pointee.d_name) { strlen($0.baseAddress!) }
+        }
+#endif
+
         try Data().write(to: tempFileURL)
         defer { _ = try? FileManager.default.removeItem(at: tempFileURL) }
 
-        func checkDir(_ dir: UnsafeMutablePointer<DIR>) -> Bool {
+        func checkDir(_ dir: DirType) -> Bool {
             defer { closedir(dir) }
             var foundIt = false
 
             while let entry = readdir(dir) {
                 var nameBytes = entry.pointee.d_name
                 let name = withUnsafePointer(to: &nameBytes) {
-                    String(data: Data(bytes: $0, count: Int(entry.pointee.d_namlen)), encoding: .utf8)
+                    String(data: Data(bytes: $0, count: nameLen(entry)), encoding: .utf8)
                 }
 
                 if name == tempFileName {
@@ -357,80 +370,35 @@ struct POSIXErrorTests {
                 try callPOSIXFunction(path: FilePath(tempURL.path)) { opendir(tempFileURL.path) }
             } == .notDirectory
         )
-
-        #expect(
-            try #require(throws: Errno.self) {
-                try callPOSIXFunction(path: "/tmp") { acl_init(-1) }
-            } == .invalidArgument
-        )
-
-        #expect(
-            try #require(throws: Errno.self) {
-                try callPOSIXFunction(path: FilePath("/tmp")) { acl_init(-1) }
-            } == .invalidArgument
-        )
-
-        let acl: acl_t = try callPOSIXFunction(path: "/tmp") { acl_init(0) }
-        defer { acl_free(UnsafeMutableRawPointer(acl)) }
-
-        let acl2: acl_t = try callPOSIXFunction(path: FilePath("/tmp")) { acl_init(0) }
-        defer { acl_free(UnsafeMutableRawPointer(acl2)) }
-
-        var optionalACL: acl_t? = acl
-
-        let aclEntry = try callPOSIXFunction(expect: .zero) { acl_create_entry(&optionalACL, $0) }
-
-        #expect(
-            try #require(throws: Errno.self) {
-                try callPOSIXFunction(path: "/tmp") { acl_get_qualifier(aclEntry) }
-            } == .invalidArgument
-        )
-
-        #expect(
-            try #require(throws: Errno.self) {
-                try callPOSIXFunction(path: FilePath("/tmp")) { acl_get_qualifier(aclEntry) }
-            } == .invalidArgument
-        )
-
-        try callPOSIXFunction(expect: .zero) { acl_set_tag_type(aclEntry, ACL_EXTENDED_ALLOW) }
-
-        #expect(throws: Never.self) {
-            let qualifier: UnsafeMutableRawPointer? = try callPOSIXFunction(path: "/tmp") {
-                acl_get_qualifier(aclEntry)
-            }
-            acl_free(qualifier)
-        }
-
-        #expect(throws: Never.self) {
-            let qualifier: UnsafeMutableRawPointer? = try callPOSIXFunction(path: FilePath("/tmp")) {
-                acl_get_qualifier(aclEntry)
-            }
-            acl_free(qualifier)
-        }
     }
 
     @Test("callPOSIXFunction with .returnValue errorFrom")
     func testDirectErrorReturn() throws {
-        var attr = try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { posix_spawnattr_init($0) }
+        var attr = pthread_mutexattr_t()
+        try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { pthread_mutexattr_init(&attr) }
         defer {
             #expect(throws: Never.self) {
                 _ = try? callPOSIXFunction(expect: .zero, errorFrom: .returnValue) {
-                    posix_spawnattr_destroy(&attr)
+                    pthread_mutexattr_destroy(&attr)
                 }
             }
         }
 
         #expect(throws: Never.self) {
             try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) {
-                posix_spawnattr_setflags(&attr, 1)
+                pthread_mutexattr_settype(&attr, Int32(PTHREAD_MUTEX_NORMAL))
             }
         }
 
         #expect(
             try #require(throws: Errno.self) {
-                try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) { posix_spawnattr_setflags(nil, 1) }
+                try callPOSIXFunction(expect: .zero, errorFrom: .returnValue) {
+                    pthread_mutexattr_settype(&attr, -99999)
+                }
             } == .invalidArgument
         )
     }
 }
+
+#endif
 

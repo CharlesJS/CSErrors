@@ -16,7 +16,7 @@ public struct HTTPError: CSErrorProtocol {
     public var failureReason: String? {
         var reason = "HTTP \(self.statusCode)"
 
-#if Foundation
+#if Foundation && canImport(Darwin)
         reason += " (\(HTTPURLResponse.localizedString(forStatusCode: self.statusCode)))"
 #endif
 

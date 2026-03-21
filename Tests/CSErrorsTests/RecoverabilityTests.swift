@@ -5,12 +5,22 @@
 //  Created by Charles Srstka on 1/16/23.
 //
 
-#if Foundation
+#if Foundation && canImport(Darwin)
 
 import CSErrors
-import Foundation
-import System
 import Testing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
 
 @Suite("Recoverability Tests")
 struct RecoverabilityTests {

@@ -5,12 +5,22 @@
 //  Created by Charles Srstka on 1/16/23.
 //
 
-#if Foundation
+#if Foundation && canImport(Darwin)
 
-import CSErrors
-import Foundation
-import System
+@testable import CSErrors
 import Testing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
 
 @Suite("URLError Tests")
 struct URLErrorTests {
@@ -42,7 +52,10 @@ struct URLErrorTests {
         #expect(userInfo[NSLocalizedRecoveryOptionsErrorKey] as? [String] == ["Go somewhere else", "Fret"])
         #expect(userInfo[NSRecoveryAttempterErrorKey] as? String == "Complain to Webmaster")
         #expect(userInfo[NSHelpAnchorErrorKey] as? String == "Haaaaalp")
+#if Foundation && canImport(Darwin)
         #expect(userInfo[NSStringEncodingErrorKey] as? UInt == String.Encoding.utf8.rawValue)
+#endif
+        #expect(userInfo[NSStringEncodingErrorKeyNonDarwin] as? Int == Int(String.Encoding.utf8.rawValue))
         #expect(userInfo[NSURLErrorKey] as? URL == url)
         #expect(userInfo[NSFilePathErrorKey] == nil)
         #expect(userInfo["foo"] as? String == "bar")

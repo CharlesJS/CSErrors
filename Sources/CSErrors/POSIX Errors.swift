@@ -5,14 +5,24 @@
 //  Created by Charles Srstka on 1/10/23.
 //
 
+#if canImport(SystemPackage)
+import SystemPackage
+#else
 import System
+#endif
 
 #if canImport(Darwin)
 import Darwin
-func getErrno() -> Int32 { Darwin.errno }
+@inline(__always) @usableFromInline func getErrno() -> Int32 { Darwin.errno }
 #elseif canImport(Glibc)
 import Glibc
-func getErrno() -> Int32 { Glibc.errno }
+@inline(__always) @usableFromInline func getErrno() -> Int32 { Glibc.errno }
+#endif
+
+#if Foundation && canImport(Darwin)
+private let _posixErrorDomain = NSPOSIXErrorDomain
+#else
+private let _posixErrorDomain = "NSPOSIXErrorDomain"
 #endif
 
 #if Foundation
@@ -21,23 +31,31 @@ import FoundationEssentials
 #else
 import Foundation
 #endif
-#endif
 
-internal var posixErrorDomain: String { "NSPOSIXErrorDomain" }
+extension POSIXError {
+    public static let posixErrorDomain = _posixErrorDomain
+}
+#endif
 
 extension Error {
     public func toErrno() -> Int32? {
         if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11),
-           let err = self as? System.Errno {
+           let err = self as? Errno {
             return err.rawValue
         }
+
+#if Foundation
+        if let posixErr = self as? POSIXError {
+            return posixErr.code.rawValue
+        }
+#endif
 
         if let osStatusErr = self as? OSStatusError, let err = translateOSStatusToPOSIX(osStatusErr.rawValue) {
             return err
         }
 
         switch self._domain {
-        case posixErrorDomain:
+        case _posixErrorDomain:
             return Int32(self._code)
         case OSStatusError.osStatusErrorDomain:
             return translateOSStatusToPOSIX(OSStatus(self._code))
@@ -50,21 +68,26 @@ extension Error {
 
 #if Foundation
 
-public func errno(_ code: Int32 = Foundation.errno, url: URL?, isWrite: Bool = false) -> any Error {
+public func errno(_ code: Int32 = getErrno(), url: URL?, isWrite: Bool = false) -> any Error {
     if code == 0 {
         return CocoaError(isWrite ? .fileWriteUnknown : .fileReadUnknown)
     }
 
     let cocoaCode = cocoaCode(posixCode: code, isWrite: isWrite)
+
+#if canImport(Darwin)
     let err: any Error
 
     if #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11) {
-        err = System.Errno(rawValue: code)
+        err = Errno(rawValue: code)
     } else if let posixCode = POSIXErrorCode(rawValue: code) {
         err = POSIXError(posixCode)
     } else {
         err = NSError(domain: NSPOSIXErrorDomain, code: Int(code))
     }
+#else
+    let err = Errno(rawValue: code)
+#endif
 
     if err.isCancelledError {
         return CocoaError(.userCancelled, url: url, underlying: err)
@@ -99,7 +122,7 @@ public func errno(_ code: Int32? = nil, path: FilePath, isWrite: Bool = false) -
         return GenericError.unknownError(isWrite: isWrite)
     }
 
-    return System.Errno(rawValue: code)
+    return Errno(rawValue: code)
 #endif
 }
 
@@ -123,10 +146,10 @@ public func errno(_ code: Int32? = nil, path: String? = nil, isWrite: Bool = fal
     }
 
     guard #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *), versionCheck(11) else {
-        return GenericError(_domain: "NSPOSIXErrorDomain", _code: Int(code))
+        return GenericError(_domain: _posixErrorDomain, _code: Int(code))
     }
 
-    return System.Errno(rawValue: code)
+    return Errno(rawValue: code)
 #endif
 }
 
@@ -367,7 +390,11 @@ internal func translateErrno(_ code: Int32, path: FilePath, isWrite: Bool) -> an
         return translateErrno(code, path: path.string, isWrite: isWrite)
     }
 
+#if canImport(FoundationEssentials)
+    return errno(code, url: URL(filePath: path.string), isWrite: isWrite)
+#else
     return errno(code, url: URL(filePath: path), isWrite: isWrite)
+#endif
 }
 
 internal func translateErrno(_ code: Int32, path: String?, isWrite: Bool) -> any Error {

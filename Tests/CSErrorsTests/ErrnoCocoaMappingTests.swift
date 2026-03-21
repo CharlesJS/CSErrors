@@ -8,9 +8,26 @@
 #if Foundation
 
 @testable import CSErrors
-import Foundation
-import System
 import Testing
+
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
+
 
 @Suite("Map errno to CocoaError")
 struct ErrnoCocoaMappingTests {
@@ -45,7 +62,9 @@ struct ErrnoCocoaMappingTests {
         try self.checkMapping(code: EFBIG, cocoaCode: .fileReadTooLarge)
         try self.checkMapping(code: ENOSPC, cocoaCode: .fileWriteOutOfSpace)
         try self.checkMapping(code: EROFS, cocoaCode: .fileWriteVolumeReadOnly)
+#if canImport(Darwin)
         try self.checkMapping(code: EFTYPE, cocoaCode: .fileReadCorruptFile)
+#endif
         try self.checkMapping(code: ECANCELED, cocoaCode: .userCancelled)
     }
 
@@ -58,8 +77,8 @@ struct ErrnoCocoaMappingTests {
 
     @Test("Map zero errno to unknown error, since a zero shouldn't have been raised")
     func testMappingZeroError() {
-        #expect(errno(0, isWrite: false) as? CocoaError == CocoaError(.fileReadUnknown))
-        #expect(errno(0, isWrite: true) as? CocoaError == CocoaError(.fileWriteUnknown))
+        #expect((errno(0, isWrite: false) as? CocoaError)?.code == .fileReadUnknown)
+        #expect((errno(0, isWrite: true) as? CocoaError)?.code == .fileWriteUnknown)
     }
 
     @Test("URL propagation on old macOS versions")
@@ -77,6 +96,7 @@ struct ErrnoCocoaMappingTests {
         emulateMacOSVersion(11, closure: check)
     }
 
+#if os(macOS)
     @Test("Return POSIXError on macOS 10.x")
     func testReturnPOSIXErrorOnMacOS10() {
         emulateMacOSVersion(10) {
@@ -89,6 +109,7 @@ struct ErrnoCocoaMappingTests {
             }
         }
     }
+#endif
 }
 
 #endif

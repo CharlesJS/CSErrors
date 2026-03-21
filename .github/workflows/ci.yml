@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  unit_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel, ubuntu-latest, ubuntu-24.04-arm]
+        traits: ["none", "Foundation"]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v6
+    - uses: SwiftyLab/setup-swift@latest
+    - name: Determine traits flags
+      id: traits
+      run: |
+        if [[ ${{ matrix.traits }} = 'all' ]]; then
+          echo "flags=--enable-all-traits" >> $GITHUB_OUTPUT
+        elif [[ ${{ matrix.traits }} = 'none' ]]; then
+          echo "flags=--disable-default-traits" >> $GITHUB_OUTPUT
+        else
+          echo "flags=--traits ${{ matrix.traits }}" >> $GITHUB_OUTPUT
+        fi
+    - name: Build
+      run: swift build --build-tests --enable-code-coverage -v ${{ steps.traits.outputs.flags }}
+    - name: Run tests
+      run: swift test --enable-code-coverage -v ${{ steps.traits.outputs.flags }} --xunit-output testresults.xml
+    - name: Collect artifacts
+      if: always()
+      run: |
+        mkdir -p artifacts
+        cp testresults*.xml artifacts/ 2>/dev/null || true
+        find .build -path "*/codecov/*.json" | xargs -I{} cp {} artifacts/ 2>/dev/null || true
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.traits }}
+        path: artifacts/
+

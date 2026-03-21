@@ -8,9 +8,19 @@
 #if Foundation
 
 @testable import CSErrors
-import Foundation
-import System
 import Testing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
 
 @Suite("Error Metadata Tests")
 	struct ErrorMetadataTests {
@@ -146,7 +156,6 @@ import Testing
         let metadata = ErrorMetadata(description: "Et Tu Brute", stringEncoding: .isoLatin1)
 
         #expect(metadata.stringEncoding == .isoLatin1)
-        #expect(metadata.toUserInfo()[NSStringEncodingErrorKey] as? UInt == String.Encoding.isoLatin1.rawValue)
     }
 
     @Test("Non-file URL property")

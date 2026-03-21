@@ -6,9 +6,25 @@
 //
 
 @testable import CSErrors
-import Foundation
-import System
 import Testing
+
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
 
 @Suite("Stderr Tests", .serialized) struct StderrTests {
     @Test("Print to Stderr")

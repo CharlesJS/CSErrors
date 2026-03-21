@@ -7,10 +7,21 @@
 
 #if Foundation
 
-import CSErrors
-import Foundation
-import System
+@testable import CSErrors
 import Testing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+#if canImport(SystemPackage)
+import SystemPackage
+#else
+import System
+#endif
+
 
 @Suite("CocoaError Tests")
 struct CocoaErrorTests {
@@ -26,10 +37,13 @@ struct CocoaErrorTests {
         )
 
         #expect(err.code == .fileNoSuchFile)
+#if canImport(Darwin)
         #expect(err.errorCode == CocoaError.Code.fileNoSuchFile.rawValue)
         #expect(err.localizedDescription == "no can do")
-        #expect((err.userInfo[NSLocalizedFailureReasonErrorKey] as? String) == "i don't wanna")
+#endif
+        #expect((err.userInfo[NSLocalizedDescriptionKey] as? String) == "no can do")
         #expect(err.stringEncoding == .macOSRoman)
+        #expect((err.userInfo[NSLocalizedFailureReasonErrorKey] as? String) == "i don't wanna")
         #expect(err.url == URL(filePath: "/path/to/file"))
     }
 
@@ -44,8 +58,11 @@ struct CocoaErrorTests {
         )
 
         #expect(err.code == .fileNoSuchFile)
+#if canImport(Darwin)
         #expect(err.errorCode == CocoaError.Code.fileNoSuchFile.rawValue)
         #expect(err.localizedDescription == "no can do")
+#endif
+        #expect((err.userInfo[NSLocalizedDescriptionKey] as? String) == "no can do")
         #expect((err.userInfo[NSLocalizedFailureReasonErrorKey] as? String) == "i don't wanna")
         #expect(err.stringEncoding == .macOSRoman)
         #expect(err.url == URL(filePath: "/path/to/file"))
@@ -55,7 +72,9 @@ struct CocoaErrorTests {
     func testFileNotFound() {
         #expect(CocoaError(.fileNoSuchFile).isFileNotFoundError)
         #expect(CocoaError(.fileReadNoSuchFile).isFileNotFoundError)
+#if canImport(Darwin)
         #expect(CocoaError(.ubiquitousFileUnavailable).isFileNotFoundError)
+#endif
         #expect(!CocoaError(.fileWriteNoPermission).isFileNotFoundError)
     }
 

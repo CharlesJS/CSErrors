@@ -5,7 +5,11 @@
 //  Created by Charles Srstka on 3/12/23.
 //
 
+#if canImport(SystemPackage)
+import SystemPackage
+#else
 import System
+#endif
 
 #if canImport(Darwin)
 import Darwin
@@ -20,11 +24,13 @@ public struct StandardErrorStream: TextOutputStream {
                 try string.withCString {
                     let len = self.lengthOfString($0)
                     try UnsafeBufferPointer(start: $0, count: len).withMemoryRebound(to: UInt8.self) { buf in
+#if canImport(Darwin)
                         guard #available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, macCatalyst 14.0, *),
                               versionCheck(11) else {
                             fwrite(buf.baseAddress, 1, buf.count, stderr)
                             return
                         }
+#endif
 
                         _ = try FileDescriptor.standardError.writeAll(buf)
                     }
