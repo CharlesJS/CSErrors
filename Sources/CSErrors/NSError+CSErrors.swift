@@ -5,18 +5,11 @@
 //  Created by Charles Srstka on 11/11/23.
 //
 
-#if Foundation && canImport(Darwin)
-
-#if canImport(FoundationEssentials)
-import FoundationEssentials
-#else
+#if Foundation && !canImport(FoundationEssentials)
 import Foundation
-#endif
-
-import System
 
 extension NSError {
-    internal func toCSErrorProtocol() -> (any CSErrorProtocol)? {
+    internal func nserrorToCSErrorProtocol() -> (any CSErrorProtocol)? {
         switch self.domain {
         case NSCocoaErrorDomain:
             return self as? CocoaError
