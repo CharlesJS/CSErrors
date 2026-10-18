@@ -45,11 +45,9 @@ extension Error {
             return true
         }
 
-#if Foundation && canImport(Darwin)
-        if let err = (self as NSError).toCSErrorProtocol(), err.isFileNotFoundError {
+        if let err = self.toCSErrorProtocol(), err.isFileNotFoundError {
             return true
         }
-#endif
 
         return false
     }
@@ -74,11 +72,9 @@ extension Error {
             return true
         }
 
-#if Foundation && canImport(Darwin)
-        if let err = (self as NSError).toCSErrorProtocol(), err.isPermissionError {
+        if let err = self.toCSErrorProtocol(), err.isPermissionError {
             return true
         }
-#endif
 
         return false
     }
@@ -103,12 +99,25 @@ extension Error {
             return true
         }
 
-#if Foundation && canImport(Darwin)
-        if let err = (self as NSError).toCSErrorProtocol(), err.isCancelledError {
+        if let err = self.toCSErrorProtocol(), err.isCancelledError {
             return true
         }
-#endif
 
         return false
+    }
+
+    private func toCSErrorProtocol() -> (any CSErrorProtocol)? {
+#if Foundation
+#if canImport(Darwin)
+        (self as NSError).nserrorToCSErrorProtocol()
+#else
+        switch self._domain {
+        case cocoaErrorDomain: CocoaError(CocoaError.Code(rawValue: self._code))
+        default: nil
+        }
+#endif
+#else
+        nil
+#endif
     }
 }

@@ -5,7 +5,7 @@
 //  Created by Charles Srstka on 11/7/23.
 //
 
-#if Foundation && canImport(Darwin)
+#if Foundation
 
 import Foundation
 import Testing
@@ -16,11 +16,15 @@ struct NSErrorTests {
     func testFileNotFound() {
         #expect(NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError).isFileNotFoundError)
         #expect(NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoSuchFileError).isFileNotFoundError)
+#if canImport(Darwin)
         #expect(NSError(domain: NSCocoaErrorDomain, code: NSUbiquitousFileUnavailableError).isFileNotFoundError)
+#endif
         #expect(!NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError).isFileNotFoundError)
 
+#if canImport(Darwin)
         #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorFileDoesNotExist).isFileNotFoundError)
         #expect(!NSError(domain: NSURLErrorDomain, code: NSURLErrorNoPermissionsToReadFile).isFileNotFoundError)
+#endif
 
         #expect(NSError(domain: NSOSStatusErrorDomain, code: -43 /* fnfErr */).isFileNotFoundError)
         #expect(!NSError(domain: NSOSStatusErrorDomain, code: -36 /* ioErr */).isFileNotFoundError)
@@ -41,8 +45,10 @@ struct NSErrorTests {
         #expect(NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError).isPermissionError)
         #expect(!NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError).isPermissionError)
 
+#if canImport(Darwin)
         #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorNoPermissionsToReadFile).isPermissionError)
         #expect(!NSError(domain: NSURLErrorDomain, code: NSURLErrorUnsupportedURL).isPermissionError)
+#endif
 
         #expect(NSError(domain: NSOSStatusErrorDomain, code: -5000 /* afpAccessDenied */).isPermissionError)
         #expect(!NSError(domain: NSOSStatusErrorDomain, code: -43 /* fnfErr */).isPermissionError)
@@ -63,9 +69,11 @@ struct NSErrorTests {
         #expect(NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError).isCancelledError)
         #expect(!NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError).isCancelledError)
 
+#if canImport(Darwin)
         #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancelledError)
         #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorUserCancelledAuthentication).isCancelledError)
         #expect(!NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut).isCancelledError)
+#endif
 
         #expect(NSError(domain: NSOSStatusErrorDomain, code: -128 /* userCanceledErr */).isCancelledError)
         #expect(NSError(domain: NSOSStatusErrorDomain, code: -1711 /* errAEWaitCanceled */).isCancelledError)
