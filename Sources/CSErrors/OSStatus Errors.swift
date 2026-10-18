@@ -14,6 +14,9 @@ import System
 #if canImport(Darwin)
 import Darwin
 #else
+#if canImport(Glibc)
+import Glibc
+#endif
 public typealias OSStatus = Int32
 #endif
 
@@ -273,7 +276,101 @@ public func osStatusError(
 
 internal func translateOSStatusToPOSIX(_ code: some BinaryInteger) -> Int32? {
     let osStatus = OSStatus(code)
-    
+
+#if !canImport(Darwin)
+    // kPOSIXError* codes assume Darwin sys/errno.h, which can vary on other platforms
+
+    switch osStatus {
+        case 100001: return EPERM
+        case 100002: return ENOENT
+        case 100003: return ESRCH
+        case 100004: return EINTR
+        case 100005: return EIO
+        case 100006: return ENXIO
+        case 100007: return E2BIG
+        case 100008: return ENOEXEC
+        case 100009: return EBADF
+        case 100010: return ECHILD
+        case 100011: return EDEADLK
+        case 100012: return ENOMEM
+        case 100013: return EACCES
+        case 100014: return EFAULT
+        case 100015: return ENOTBLK
+        case 100016: return EBUSY
+        case 100017: return EEXIST
+        case 100018: return EXDEV
+        case 100019: return ENODEV
+        case 100020: return ENOTDIR
+        case 100021: return EISDIR
+        case 100022: return EINVAL
+        case 100023: return ENFILE
+        case 100024: return EMFILE
+        case 100025: return ENOTTY
+        case 100026: return ETXTBSY
+        case 100027: return EFBIG
+        case 100028: return ENOSPC
+        case 100029: return ESPIPE
+        case 100030: return EROFS
+        case 100031: return EMLINK
+        case 100032: return EPIPE
+        case 100033: return EDOM
+        case 100034: return ERANGE
+        case 100035: return EAGAIN
+        case 100036: return EINPROGRESS
+        case 100037: return EALREADY
+        case 100038: return ENOTSOCK
+        case 100039: return EDESTADDRREQ
+        case 100040: return EMSGSIZE
+        case 100041: return EPROTOTYPE
+        case 100042: return ENOPROTOOPT
+        case 100043: return EPROTONOSUPPORT
+        case 100044: return ESOCKTNOSUPPORT
+        case 100045: return ENOTSUP
+        case 100046: return EPFNOSUPPORT
+        case 100047: return EAFNOSUPPORT
+        case 100048: return EADDRINUSE
+        case 100049: return EADDRNOTAVAIL
+        case 100050: return ENETDOWN
+        case 100051: return ENETUNREACH
+        case 100052: return ENETRESET
+        case 100053: return ECONNABORTED
+        case 100054: return ECONNRESET
+        case 100055: return ENOBUFS
+        case 100056: return EISCONN
+        case 100057: return ENOTCONN
+        case 100058: return ESHUTDOWN
+        case 100059: return ETOOMANYREFS
+        case 100060: return ETIMEDOUT
+        case 100061: return ECONNREFUSED
+        case 100062: return ELOOP
+        case 100063: return ENAMETOOLONG
+        case 100064: return EHOSTDOWN
+        case 100065: return EHOSTUNREACH
+        case 100066: return ENOTEMPTY
+        case 100068: return EUSERS
+        case 100069: return EDQUOT
+        case 100070: return ESTALE
+        case 100071: return EREMOTE
+        case 100077: return ENOLCK
+        case 100078: return ENOSYS
+        case 100084: return EOVERFLOW
+        case 100089: return ECANCELED
+        case 100090: return EIDRM
+        case 100091: return ENOMSG
+        case 100092: return EILSEQ
+        case 100094: return EBADMSG
+        case 100095: return EMULTIHOP
+        case 100096: return ENODATA
+        case 100097: return ENOLINK
+        case 100098: return ENOSR
+        case 100099: return ENOSTR
+        case 100100: return EPROTO
+        case 100101: return ETIME
+        case 100102: return EOPNOTSUPP
+    default: break
+    }
+#endif
+
     if ((OSStatusError.Codes.kPOSIXErrorBase + 1)..<(OSStatusError.Codes.kPOSIXErrorBase + 1000)).contains(osStatus) {
         return osStatus - OSStatusError.Codes.kPOSIXErrorBase
     }
